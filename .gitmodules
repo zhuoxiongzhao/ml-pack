@@ -1,0 +1,9 @@
+[submodule "libfm"]
+	path = libfm
+	url = git@github.com:zhangyafeikimi/libfm.git
+[submodule "xgboost"]
+	path = xgboost
+	url = git@github.com:zhangyafeikimi/xgboost.git
+[submodule "liblinear"]
+	path = liblinear
+	url = git@github.com:zhangyafeikimi/liblinear.git

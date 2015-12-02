@@ -1,27 +1,27 @@
 // Copyright (c) 2015 Tencent Inc.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// load text problem files
+// load binary sample files
 //
 
-#include "problem.h"
+#include "common/problem.h"
 
 int main(int argc, char** argv) {
   if (argc == 1) {
-    Log("%s file1 [file2] [file3] [...]\n", argv[0]);
+    fprintf(stderr, "%s SAMPLE_FILE1 [SAMPLE_FILE2] ...\n", argv[0]);
     return 1;
   }
 
   for (int i = 1; i < argc; i++) {
     Problem problem;
-    FILE* fp = yfopen(argv[i], "r");
+    FILE* fp = yfopen(argv[i], "rb");
     if (fp == NULL) {
       continue;
     }
     ScopedFile guard(fp);
-    Log("Loading \"%s\"...\n", argv[i]);
-    if (problem.LoadText(fp)) {
-      Log("OK.\n");
+    Log("Reading \"%s\"...\n", argv[i]);
+    if (problem.LoadBinary(fp)) {
+      Log("Done.\n");
     } else {
       Error("Failed.\n");
     }

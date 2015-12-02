@@ -46,8 +46,8 @@
 * advisable in any important application.  All use of these programs is
 * entirely at the user's own risk.
 */
-#include "lbfgs.h"
 #include <stdio.h>
+#include "lbfgs.h"
 
 static double evaluate(
   void* instance,

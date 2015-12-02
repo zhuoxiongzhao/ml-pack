@@ -3,7 +3,7 @@
 #
 # Author: Yafei Zhang (kimmyzhang@tencent.com)
 #
-# 抽取ngram特征和词频
+# extract ngram tokens and their frequency
 #
 
 
@@ -36,20 +36,20 @@ def prepare_4_ngram(text):
         except Exception:
             pass
     if charset is None:
-        # 各种解码均失败
+        # decode failed
         return None
 
     sb = unicode('')
     for uchar in text:
         if u'\u4e00' <= uchar <= u'\u9fa5':
-            # 汉字
+            # Chinese characters
             sb += uchar
         if u'\u0030' <= uchar <= u'\u0039':
-            # 数字
+            # digits
             sb += uchar
         if (u'\u0041' <= uchar <= u'\u005a') \
                 or (u'\u0061' <= uchar <= u'\u007a'):
-            # 字母
+            # letters
             sb += uchar.lower()
     return sb
 

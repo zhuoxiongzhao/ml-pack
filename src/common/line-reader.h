@@ -7,7 +7,7 @@
 #ifndef SRC_COMMON_LINE_READER_H_
 #define SRC_COMMON_LINE_READER_H_
 
-#include "x.h"
+#include "common/x.h"
 
 struct LineReader {
   char* buf;

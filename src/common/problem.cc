@@ -2,21 +2,19 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
-#include <algorithm>
-
 #include "common/problem.h"
 #include "common/line-reader.h"
 
-bool Problem::LoadText(FILE* fp) {
-  Clear();
-
+bool Problem::LoadText(FILE* fp, double _bias) {
   LineReader line_reader;
   int max_column = 0, sample_max_column, i = 0, j = 0, k;
-  bool need_sort;
   char* endptr;
   char* label;
   char* index;
   char* value;
+
+  Clear();
+  bias = _bias;
 
   // Debug("1st turn.\n");
   while (line_reader.ReadLine(fp) != NULL) {
@@ -35,7 +33,7 @@ bool Problem::LoadText(FILE* fp) {
       }
       x_space_size++;
     }
-    if (bias >= 0) {
+    if (bias >= 0.0) {
       x_space_size++;
     }
     rows++;
@@ -57,7 +55,6 @@ bool Problem::LoadText(FILE* fp) {
 
     sample_max_column = 0;
     k = 0;
-    need_sort = false;
     x[i] = &x_space[j];
     y[i] = strtod(label, &endptr);
     if (*endptr != '\0') {
@@ -99,21 +96,17 @@ bool Problem::LoadText(FILE* fp) {
       }
       if (x_space[j].index > sample_max_column) {
         sample_max_column = x_space[j].index;
-      } else {
-        need_sort = true;
       }
 
       j++;
       k++;
     }
-    if (need_sort) {
-      std::sort(x[i], x[i] + k, FeatureNodeLess());
-    }
+
     if (sample_max_column > max_column) {
       max_column = sample_max_column;
     }
 
-    if (bias >= 0) {
+    if (bias >= 0.0) {
       x_space[j++].value = bias;
     }
 
@@ -124,7 +117,7 @@ bool Problem::LoadText(FILE* fp) {
     i++;
   }
 
-  if (bias >= 0) {
+  if (bias >= 0.0) {
     columns = max_column + 1;
     for (i = 1; i < rows; i++) {
       // assign bias term's index
@@ -138,7 +131,7 @@ bool Problem::LoadText(FILE* fp) {
   return true;
 }
 
-bool Problem::LoadBinary(FILE* fp) {
+void Problem::LoadBinary(FILE* fp) {
   Clear();
 
   xfread(&bias, sizeof(bias), 1, fp);
@@ -166,16 +159,13 @@ bool Problem::LoadBinary(FILE* fp) {
       }
     }
   }
-
-  return true;
 }
 
-bool Problem::SaveBinary(FILE* fp) const {
+void Problem::SaveBinary(FILE* fp) const {
   xfwrite(&bias, sizeof(bias), 1, fp);
   xfwrite(&rows, sizeof(rows), 1, fp);
   xfwrite(&columns, sizeof(columns), 1, fp);
   xfwrite(&x_space_size, sizeof(x_space_size), 1, fp);
   xfwrite(y, sizeof(y[0]), rows, fp);
   xfwrite(x_space, sizeof(x_space[0]), x_space_size + rows, fp);
-  return true;
 }

@@ -20,11 +20,7 @@ int main(int argc, char** argv) {
     }
     ScopedFile guard(fp);
     Log("Reading \"%s\"...\n", argv[i]);
-    if (problem.LoadBinary(fp)) {
-      Log("Done.\n");
-    } else {
-      Error("Failed.\n");
-    }
+    problem.LoadBinary(fp);
   }
   return 0;
 }

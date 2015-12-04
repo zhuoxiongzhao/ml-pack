@@ -32,28 +32,43 @@ lbfgs/lbfgs.o
 
 LIB=libx.a
 
-BIN=problem-gen-bin$(EXE) problem-load-bin$(EXE) lbfgs-test$(EXE) gen-feature-map$(EXE) map-sample$(EXE)
+BIN= \
+lr-test$(EXE) \
+lbfgs-test$(EXE) \
+gen-feature-map$(EXE) \
+map-sample$(EXE) \
+problem-gen-bin$(EXE) \
+problem-load-bin$(EXE)
 
-.PHONY: obj clean
+.PHONY: clean
 all: $(LIB) $(BIN) lbfgs
 
 $(LIB): $(OBJECT)
 	$(AR) $@ $^
 	$(RANLIB) $@
 
-problem-gen-bin$(EXE): common/problem-gen-bin.cc $(LIB)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+blas/%.o: blas/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-problem-load-bin$(EXE): common/problem-load-bin.cc $(LIB)
+lbfgs/lbfgs.o: lbfgs/lbfgs.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+lr-test$(EXE): core/lr-test.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 lbfgs-test$(EXE): lbfgs/lbfgs-test.c $(LIB)
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 gen-feature-map$(EXE): tools/gen-feature-map.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 map-sample$(EXE): tools/map-sample.cc $(LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+
+problem-gen-bin$(EXE): tools/problem-gen-bin.cc $(LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+
+problem-load-bin$(EXE): tools/problem-load-bin.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:

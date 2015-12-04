@@ -52,7 +52,9 @@
 #include <float.h>
 #include <math.h>
 #include <memory.h>
+
 #include "lbfgs.h"
+#include "blas/blas-decl.h"
 
 #if defined _MSC_VER
 # define inline __inline
@@ -122,47 +124,6 @@ void vecfree(double* vec) {
   free(vec);
 }
 #endif
-
-extern void dcopy
-(
-  const int                  N,
-  const double*                X,
-  const int                  INCX,
-  double*                      Y,
-  const int                  INCY
-);
-extern void dscal
-(
-  const int                  N,
-  const double               ALPHA,
-  double*                      X,
-  const int                  INCX
-);
-extern void daxpy
-(
-  const int                  N,
-  const double               ALPHA,
-  const double*                X,
-  const int                  INCX,
-  double*                      Y,
-  const int                  INCY
-);
-extern double ddot
-(
-  const int                  N,
-  const double*                X,
-  const int                  INCX,
-  const double*                Y,
-  const int                  INCY
-);
-extern void dswap
-(
-  const int                  N,
-  double*                      X,
-  const int                  INCX,
-  double*                      Y,
-  const int                  INCY
-);
 
 inline static void veccpy(double* y, const double* x, const int n) {
   /* y = x */

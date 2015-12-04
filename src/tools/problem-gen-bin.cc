@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
       FILE* fin = xfopen(argv[i], "r");
       ScopedFile guard(fin);
       Log("Reading \"%s\"...\n", argv[i]);
-      if (!problem.LoadText(fin)) {
+      if (!problem.LoadText(fin, 1.0)) {
         continue;
         Error("Failed.\n");
       }
@@ -34,11 +34,7 @@ int main(int argc, char** argv) {
       FILE* fout = xfopen(filename.c_str(), "wb");
       ScopedFile guard(fout);
       Log("Writing \"%s\"...\n", argv[i]);
-      if (problem.SaveBinary(fout)) {
-        Log("Done.\n");
-      } else {
-        Error("Failed.\n");
-      }
+      problem.SaveBinary(fout);
     }
   }
   return 0;

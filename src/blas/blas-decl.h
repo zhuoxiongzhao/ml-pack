@@ -7,7 +7,13 @@
 #ifndef SRC_BLAS_BLAS_DECL_H_
 #define SRC_BLAS_BLAS_DECL_H_
 
-extern "C" void dcopy
+#if defined __cplusplus
+# define EXTERN extern "C"
+#else
+# define EXTERN extern
+#endif
+
+EXTERN void dcopy
 (
   const int                  N,
   const double*              X,
@@ -16,7 +22,7 @@ extern "C" void dcopy
   const int                  INCY
 );
 
-extern "C" void dscal
+EXTERN void dscal
 (
   const int                  N,
   const double               ALPHA,
@@ -24,7 +30,7 @@ extern "C" void dscal
   const int                  INCX
 );
 
-extern "C" void daxpy
+EXTERN void daxpy
 (
   const int                  N,
   const double               ALPHA,
@@ -34,7 +40,7 @@ extern "C" void daxpy
   const int                  INCY
 );
 
-extern "C" double ddot
+EXTERN double ddot
 (
   const int                  N,
   const double*              X,
@@ -43,7 +49,7 @@ extern "C" double ddot
   const int                  INCY
 );
 
-extern "C" void dswap
+EXTERN void dswap
 (
   const int                  N,
   double*                    X,

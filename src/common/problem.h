@@ -11,7 +11,6 @@
 
 struct FeatureNode {
   int index;
-  int pad;
   double value;
 };
 
@@ -23,8 +22,8 @@ struct FeatureNodeLess {
 
 struct Problem {
   double bias;  // < 0 if no bias term
-  int rows;
-  int columns;
+  int rows;  // number of samples
+  int columns;  // number of features
   int x_space_size;
   double* y;
   FeatureNode** x;
@@ -38,21 +37,31 @@ struct Problem {
   }
 
   void Clear() {
+    bias = 1.0;
     rows = 0;
     columns = 0;
     x_space_size = 0;
-    free(y);
-    y = NULL;
-    free(x);
-    x = NULL;
-    free(x_space);
-    x_space = NULL;
+    if (y) {
+      free(y);
+      y = NULL;
+    }
+    if (x) {
+      free(x);
+      x = NULL;
+    }
+    if (x_space) {
+      free(x_space);
+      x_space = NULL;
+    }
   }
 
-  // LIBSVM format
-  bool LoadText(FILE* fp);
-  bool LoadBinary(FILE* fp);
-  bool SaveBinary(FILE* fp) const;
+  // X format(fully compatible with LIBSVM format)
+  // "_bias" < 0 if no bias term
+  bool LoadText(FILE* fp, double _bias);
+  void LoadBinary(FILE* fp);
+  void SaveBinary(FILE* fp) const;
 };
+
+// TODO(yafei) make cross validation problem
 
 #endif  // SRC_COMMON_PROBLEM_H_

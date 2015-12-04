@@ -7,23 +7,22 @@
 #ifndef SRC_COMMON_METRIC_H_
 #define SRC_COMMON_METRIC_H_
 
-#include <vector>
-
-typedef std::vector<double> DoubleVector;
-
 struct BinaryClassificationMetric {
   double precision;
   double recall;
   double fscore;
   double accuracy;
+  double loglikelyhood;  // TODO(yafei)
   double auc;
 };
 
-void Evaluate(const DoubleVector& pred,
-              const DoubleVector& y,
+void Evaluate(const double* pred,
+              const double* y,
+              int size,
               BinaryClassificationMetric* metric,
               double theshold = 0.5);
-double EvaluateAUC(const DoubleVector& pred,
-                   const DoubleVector& y);
+double EvaluateAUC(const double* pred,
+                   const double* y,
+                   int size);
 
 #endif  // SRC_COMMON_METRIC_H_

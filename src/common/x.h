@@ -13,6 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined _WIN32
+#define strtoll _strtoi64
+#endif
+
 #define Malloc(type, n) (type*)xmalloc(((size_t)(n))*sizeof(type))
 
 #if defined _NDEBUG || defined NDEBUG
@@ -143,16 +147,16 @@ class ScopedFile {
 };
 
 template <class T>
-class ScopedPtrMalloc {
+class ScopedPtr {
  private:
   T ptr_;
-  ScopedPtrMalloc(const ScopedPtrMalloc&);
-  ScopedPtrMalloc& operator=(const ScopedPtrMalloc&);
+  ScopedPtr(const ScopedPtr&);
+  ScopedPtr& operator=(const ScopedPtr&);
 
  public:
-  explicit ScopedPtrMalloc(T p = NULL): ptr_(p) {}
+  explicit ScopedPtr(T p = NULL): ptr_(p) {}
 
-  ~ScopedPtrMalloc() {
+  ~ScopedPtr() {
     if (ptr_) {
       free((void*)ptr_);
     }

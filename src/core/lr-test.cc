@@ -7,13 +7,15 @@
 
 int main() {
   Problem problem;
+
+  {
 #if defined _WIN32
-  FILE* fp = xfopen("../src/test-data/heart_scale", "r");
+    ScopedFile fp("../src/test-data/heart_scale", ScopedFile::Read);
 #else
-  FILE* fp = xfopen("src/test-data/heart_scale", "r");
+    ScopedFile fp("src/test-data/heart_scale", ScopedFile::Read);
 #endif
-  problem.LoadText(fp, 1.0);
-  fclose(fp);
+    problem.LoadText(fp, 1.0);
+  }
 
   LRModel model;
   model.l1_c = 0.0;
@@ -26,8 +28,8 @@ int main() {
   model.TrainLBFGS(problem);
   model.Save(stdout);
 
-  double* pred = Malloc(double, problem.rows);
-  ScopedPtr<double*> guard(pred);
+  ScopedPtr<double> pred;
+  pred.Malloc(problem.rows);
   for (int i = 0; i < problem.rows; i++) {
     pred[i] = model.Predict(problem.x[i]);
   }

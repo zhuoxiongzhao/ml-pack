@@ -25,36 +25,14 @@ struct Problem {
   int rows;  // number of samples
   int columns;  // number of features
   int x_space_size;
-  double* y;
-  FeatureNode** x;
-  FeatureNode* x_space;
 
-  Problem() : bias(1.0), rows(0), columns(0), x_space_size(0),
-    y(NULL), x(NULL), x_space(NULL) {}
+  ScopedPtr<double> y;
+  ScopedPtr<FeatureNode*> x;
+  ScopedPtr<FeatureNode> x_space;
 
-  ~Problem() {
-    Clear();
-  }
+  Problem() : bias(1.0), rows(0), columns(0), x_space_size(0) {}
 
-  void Clear() {
-    bias = 1.0;
-    rows = 0;
-    columns = 0;
-    x_space_size = 0;
-    if (y) {
-      free(y);
-      y = NULL;
-    }
-    if (x) {
-      free(x);
-      x = NULL;
-    }
-    if (x_space) {
-      free(x_space);
-      x_space = NULL;
-    }
-  }
-
+  void Clear();
   // X format(fully compatible with LIBSVM format)
   // "_bias" < 0 if no bias term
   bool LoadText(FILE* fp, double _bias);

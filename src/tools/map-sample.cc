@@ -1,5 +1,5 @@
 // Copyright (c) 2015 Tencent Inc.
-// Author: Yafei Zhang (kimmyzhang@tencent.com)
+// Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 // map non-LIBSVM sample files to LIBSVM format with a feature map
 //
@@ -8,9 +8,9 @@
 #include <map>
 #include <string>
 #include <vector>
+
 #include "common/line-reader.h"
 #include "common/problem.h"
-#include "common/x.h"
 
 typedef std::map<std::string, int> FeatureMap;
 
@@ -160,18 +160,15 @@ int main(int argc, char** argv) {
 
   FeatureMap feature_index_map;
   {
-    FILE* fp = xfopen(feature_map_filename.c_str(), "r");
-    ScopedFile guard(fp);
+    ScopedFile fp(feature_map_filename.c_str(), ScopedFile::Read);
     LoadFeatureMap(fp, &feature_index_map);
   }
 
   for (i = 1; i < argc; i++) {
     std::string filename = argv[i];
     filename += ".libsvm";
-    FILE* fin = xfopen(argv[i], "r");
-    FILE* fout = xfopen(filename.c_str(), "r");
-    ScopedFile guard_fin(fin);
-    ScopedFile guard_fout(fout);
+    ScopedFile fin(argv[i], ScopedFile::Read);
+    ScopedFile fout(filename.c_str(), ScopedFile::Write);
     Log("Mapping \"%s\" to \"%s.libsvm\"...\n", argv[i], argv[i]);
     Process(fin, fout, feature_index_map);
   }

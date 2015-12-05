@@ -47,6 +47,7 @@
 * entirely at the user's own risk.
 */
 #include <stdio.h>
+
 #include "lbfgs.h"
 
 static double evaluate(

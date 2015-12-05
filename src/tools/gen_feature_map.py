@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Author: Yafei Zhang (kimmyzhang@tencent.com)
+# Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 #
 # generate feature map from non-LIBSVM format sample files
 #

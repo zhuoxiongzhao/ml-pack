@@ -18,8 +18,7 @@ int main(int argc, char** argv) {
     Problem problem;
 
     {
-      FILE* fin = xfopen(argv[i], "r");
-      ScopedFile guard(fin);
+      ScopedFile fin(argv[i], ScopedFile::Read);
       Log("Reading \"%s\"...\n", argv[i]);
       if (!problem.LoadText(fin, 1.0)) {
         continue;
@@ -31,9 +30,8 @@ int main(int argc, char** argv) {
     {
       std::string filename = argv[i];
       filename += ".bin";
-      FILE* fout = xfopen(filename.c_str(), "wb");
-      ScopedFile guard(fout);
-      Log("Writing \"%s\"...\n", argv[i]);
+      ScopedFile fout(filename.c_str(), ScopedFile::WriteBinary);
+      Log("Writing \"%s\"...\n", filename.c_str());
       problem.SaveBinary(fout);
     }
   }

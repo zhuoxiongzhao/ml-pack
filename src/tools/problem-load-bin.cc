@@ -14,11 +14,10 @@ int main(int argc, char** argv) {
 
   for (int i = 1; i < argc; i++) {
     Problem problem;
-    FILE* fp = yfopen(argv[i], "rb");
+    ScopedFile fp(argv[i], ScopedFile::ReadBinary);
     if (fp == NULL) {
       continue;
     }
-    ScopedFile guard(fp);
     Log("Reading \"%s\"...\n", argv[i]);
     problem.LoadBinary(fp);
   }

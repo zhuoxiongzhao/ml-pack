@@ -1,11 +1,12 @@
 // Copyright (c) 2015 Tencent Inc.
-// Author: Yafei Zhang (kimmyzhang@tencent.com)
+// Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 // map non-LIBSVM sample files to LIBSVM format and generate a feature map
 //
 
 #include <map>
 #include <string>
+
 #include "common/line-reader.h"
 #include "common/problem.h"
 #include "common/x.h"
@@ -151,15 +152,12 @@ int main(int argc, char** argv) {
 
   FeatureMap feature_count_map;
   for (i = 1; i < argc; i++) {
-    FILE* fp = xfopen(argv[i], "r");
-    ScopedFile guard(fp);
+    ScopedFile fp(argv[i], ScopedFile::Read);
     Log("Processing \"%s\"...\n", argv[i]);
     Process(fp, &feature_count_map);
   }
-
-  FILE* fp = xfopen(feature_map_filename.c_str(), "w");
   {
-    ScopedFile guard(fp);
+    ScopedFile fp(feature_map_filename.c_str(), ScopedFile::Write);
     SaveFeatureMap(fp, feature_count_map);
   }
   return 0;

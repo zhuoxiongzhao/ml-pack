@@ -17,7 +17,8 @@
 #define strtoll _strtoi64
 #endif
 
-#define Malloc(type, n) (type*)xmalloc(((size_t)(n))*sizeof(type))
+#define _Malloc(type, n) (type*)xmalloc(((size_t)(n))*sizeof(type))
+#define _Realloc(p, type, n) (type*)xrealloc(p, ((size_t)(n))*sizeof(type))
 
 #if defined _NDEBUG || defined NDEBUG
 #define Debug(...)
@@ -137,34 +138,84 @@ class ScopedFile {
   ScopedFile& operator=(const ScopedFile&);
 
  public:
-  explicit ScopedFile(FILE* p = NULL) : px_(p) {}
+  enum Mode {
+    Read = 0,
+    Write,
+    ReadBinary,
+    WriteBinary,
+  };
+
+  ScopedFile() : px_(NULL) {}
+
+  ScopedFile(FILE* p) : px_(p) {}  // NOLINT
+
+  ScopedFile(const char* filename, Mode mode) {
+    static const char* mode_map[] = {"r", "w", "rb", "wb"};
+    px_ = xfopen(filename, mode_map[mode]);
+  }
 
   ~ScopedFile() {
+    Close();
+  }
+
+  void Close() {
     if (px_) {
       fclose(px_);
     }
   }
+
+  operator FILE* () {return px_;}
+  operator const FILE* () const {return px_;}
 };
 
+// NOTE: this is only for "malloc" and "realloc",
+// not for "new".
 template <class T>
 class ScopedPtr {
  private:
-  T ptr_;
+  T* ptr_;
   ScopedPtr(const ScopedPtr&);
   ScopedPtr& operator=(const ScopedPtr&);
 
  public:
-  explicit ScopedPtr(T p = NULL): ptr_(p) {}
+  ScopedPtr(): ptr_(NULL) {}
+
+  ScopedPtr(T* p): ptr_(p) {}  // NOLINT
+
+  ScopedPtr& operator=(T* p) {
+    Free();
+    ptr_ = p;
+    return *this;
+  }
 
   ~ScopedPtr() {
+    Free();
+  }
+
+  void Malloc(size_t size) {
+    Free();
+    ptr_ = _Malloc(T, size);
+  }
+
+  void Realloc(size_t size) {
+    ptr_ = _Realloc(ptr_, T, size);
+  }
+
+  void Free() {
     if (ptr_) {
-      free((void*)ptr_);
+      ::free(ptr_);
+      ptr_ = NULL;
     }
   }
 
-  void set_for_realloc(T p) {
-    ptr_ = p;
-  }
+  operator T* () {return ptr_;}
+  operator const T* () const {return ptr_;}
+  T& operator *() {return *ptr_;}
+  const T& operator *() const {return *ptr_;}
+  T& operator[](int i) {return ptr_[i];}
+  const T& operator[](int i) const {return ptr_[i];}
+  T* operator->() {return ptr_;}
+  const T* operator->() const {return ptr_;}
 };
 
 #endif  // SRC_COMMON_X_H_

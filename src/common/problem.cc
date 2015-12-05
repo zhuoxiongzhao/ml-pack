@@ -5,6 +5,16 @@
 #include "common/problem.h"
 #include "common/line-reader.h"
 
+void Problem::Clear() {
+  bias = 1.0;
+  rows = 0;
+  columns = 0;
+  x_space_size = 0;
+  y.Free();
+  x.Free();
+  x_space.Free();
+}
+
 bool Problem::LoadText(FILE* fp, double _bias) {
   LineReader line_reader;
   int max_column = 0, sample_max_column, i = 0, j = 0, k;
@@ -43,9 +53,9 @@ bool Problem::LoadText(FILE* fp, double _bias) {
 
   // Debug("2nd turn.\n");
   rewind(fp);
-  y = Malloc(double, rows);
-  x = Malloc(FeatureNode*, rows);
-  x_space = Malloc(FeatureNode, x_space_size + rows);
+  y.Malloc(rows);
+  x.Malloc(rows);
+  x_space.Malloc(x_space_size + rows);
   while (line_reader.ReadLine(fp) != NULL) {
     label = strtok(line_reader.buf, DELIMITER);
     if (label == NULL) {
@@ -139,9 +149,9 @@ void Problem::LoadBinary(FILE* fp) {
   xfread(&columns, sizeof(columns), 1, fp);
   xfread(&x_space_size, sizeof(x_space_size), 1, fp);
 
-  y = Malloc(double, rows);
-  x = Malloc(FeatureNode*, rows);
-  x_space = Malloc(FeatureNode, x_space_size + rows);
+  y.Malloc(rows);
+  x.Malloc(rows);
+  x_space.Malloc(x_space_size + rows);
 
   xfread(y, sizeof(y[0]), rows, fp);
   xfread(x_space, sizeof(x_space[0]), x_space_size + rows, fp);

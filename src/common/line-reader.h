@@ -10,28 +10,27 @@
 #include "common/x.h"
 
 struct LineReader {
-  char* buf;
-  size_t len;
+ private:
+  size_t len_;
+ public:
+  ScopedPtr<char> buf;
 
-  LineReader() : buf(NULL), len(4096) {
-    buf = Malloc(char, 4096);
-  }
-
-  ~LineReader() {
-    free(buf);
+  LineReader() : len_(4096) {
+    buf.Malloc(len_);
   }
 
   char* ReadLine(FILE* fp) {
     size_t new_len;
-    if (fgets(buf, len, fp) == NULL) {
+    if (fgets(buf, len_, fp) == NULL) {
       return NULL;
     }
 
+    // TODO(yafei) strrchr
     while (strrchr(buf, '\n') == NULL) {
-      len *= 2;
-      buf = (char*)xrealloc(buf, len);
+      len_ *= 2;
+      buf.Realloc(len_);
       new_len = strlen(buf);
-      if (fgets(buf + new_len, len - new_len, fp) == NULL) {
+      if (fgets(buf + new_len, len_ - new_len, fp) == NULL) {
         break;
       }
     }

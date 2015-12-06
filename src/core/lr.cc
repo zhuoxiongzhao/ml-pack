@@ -6,6 +6,7 @@
 
 #include "core/lr.h"
 #include "blas/blas-decl.h"
+#include "common/line-reader.h"
 #include "lbfgs/lbfgs.h"
 
 LRModel::LRModel() : eps(1e-6), l1_c(0.0), l2_c(0.0),
@@ -26,36 +27,6 @@ void LRModel::Clear() {
   if (w) {
     vecfree(w);
     w = NULL;
-  }
-}
-
-void LRModel::Load(FILE* fp) {
-  fscanf(fp, "eps=%lg\n", &eps);
-  fscanf(fp, "l1_c=%lg\n", &l1_c);
-  fscanf(fp, "l2_c=%lg\n", &l2_c);
-  fscanf(fp, "positive_weight=%lg\n", &positive_weight);
-  fscanf(fp, "bias=%lg\n", &bias);
-  fscanf(fp, "columns=%d\n", &columns);
-  fscanf(fp, "eps=%lg\n", &eps);
-
-  fscanf(fp, "\nweights:\n");
-  w = vecalloc(columns);
-  for (int i = 0; i < columns; i++) {
-    fscanf(fp, "%lg\n", &w[i]);
-  }
-}
-
-void LRModel::Save(FILE* fp) const {
-  fprintf(fp, "eps=%lg\n", eps);
-  fprintf(fp, "l1_c=%lg\n", l1_c);
-  fprintf(fp, "l2_c=%lg\n", l2_c);
-  fprintf(fp, "positive_weight=%lg\n", positive_weight);
-  fprintf(fp, "bias=%lg\n", bias);
-  fprintf(fp, "columns=%d\n", columns);
-
-  fprintf(fp, "\nweights:\n");
-  for (int i = 0; i < columns; i++) {
-    fprintf(fp, "%lg\n", w[i]);
   }
 }
 
@@ -140,8 +111,8 @@ static int LRProgress(
   int k,
   int n_evaluate
 ) {
-  Log("Iteration %d: fx=%lg xnorm=%lg gnorm=%lg.\n",
-      k, fx, xnorm, gnorm);
+  // Log("Iteration %d: fx=%lg xnorm=%lg gnorm=%lg.\n",
+  //     k, fx, xnorm, gnorm);
   return 0;
 }
 
@@ -172,4 +143,98 @@ double LRModel::Predict(const FeatureNode* node) const {
     wx += w[node->index - 1] * node->value;
   }
   return sigmoid(wx);
+}
+
+void LRModel::Predict(FILE* fin, FILE* fout, bool fout_has_label) const {
+  LineReader line_reader;
+  int i = 0, j;
+  char* endptr;
+  char* label;
+  char* index;
+  char* value;
+  ScopedPtr<FeatureNode> x_space;
+  x_space.Malloc(columns);
+
+  while (line_reader.ReadLine(fin) != NULL) {
+    // label
+    label = strtok(line_reader.buf, DELIMITER);
+    if (label == NULL) {
+      // empty line
+      continue;
+    }
+
+    // features
+    j = 0;
+    for (;;) {
+      index = strtok(NULL, DELIMITER);
+      if (index == NULL) {
+        break;
+      }
+
+      value = strrchr(index, ':');
+      if (value) {
+        if (value == index) {
+          Error("line %d, feature index is empty.\n", i + 1);
+          exit(3);
+        }
+        *value = '\0';
+        value++;
+        x_space[j].value = strtod(value, &endptr);
+        if (*endptr != '\0') {
+          Error("line %d, feature value error \"%s\".\n", i + 1, value);
+          exit(4);
+        }
+      } else {
+        x_space[j].value = 1.0;
+      }
+
+      x_space[j].index = (int)strtoll(index, &endptr, 10);
+      if (*endptr != '\0') {
+        Error("line %d, feature index error \"%s\".\n", i + 1, index);
+        exit(5);
+      }
+
+      j++;
+    }
+
+    if (bias >= 0.0) {
+      x_space[j++].value = bias;
+    }
+
+    // a sentinel
+    x_space[j++].index = -1;
+
+    fprintf(fout, "%lg\n", Predict(x_space));
+    i++;
+  }
+}
+
+void LRModel::Load(FILE* fp) {
+  fscanf(fp, "eps=%lg\n", &eps);
+  fscanf(fp, "l1_c=%lg\n", &l1_c);
+  fscanf(fp, "l2_c=%lg\n", &l2_c);
+  fscanf(fp, "positive_weight=%lg\n", &positive_weight);
+  fscanf(fp, "bias=%lg\n", &bias);
+  fscanf(fp, "columns=%d\n", &columns);
+  fscanf(fp, "eps=%lg\n", &eps);
+
+  fscanf(fp, "\nweights:\n");
+  w = vecalloc(columns);
+  for (int i = 0; i < columns; i++) {
+    fscanf(fp, "%lg\n", &w[i]);
+  }
+}
+
+void LRModel::Save(FILE* fp) const {
+  fprintf(fp, "eps=%lg\n", eps);
+  fprintf(fp, "l1_c=%lg\n", l1_c);
+  fprintf(fp, "l2_c=%lg\n", l2_c);
+  fprintf(fp, "positive_weight=%lg\n", positive_weight);
+  fprintf(fp, "bias=%lg\n", bias);
+  fprintf(fp, "columns=%d\n", columns);
+
+  fprintf(fp, "\nweights:\n");
+  for (int i = 0; i < columns; i++) {
+    fprintf(fp, "%lg\n", w[i]);
+  }
 }

@@ -12,7 +12,6 @@ struct BinaryClassificationMetric {
   double recall;
   double fscore;
   double accuracy;
-  double loglikelyhood;  // TODO(yafei)
   double auc;
 };
 

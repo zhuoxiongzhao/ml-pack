@@ -33,6 +33,7 @@ lbfgs/lbfgs.o
 LIB=libx.a
 
 BIN= \
+lr-main$(EXE) \
 lr-test$(EXE) \
 lbfgs-test$(EXE) \
 gen-feature-map$(EXE) \
@@ -52,6 +53,9 @@ blas/%.o: blas/%.c
 
 lbfgs/lbfgs.o: lbfgs/lbfgs.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+lr-main$(EXE): core/lr-main.cc $(LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 lr-test$(EXE): core/lr-test.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^

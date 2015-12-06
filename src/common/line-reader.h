@@ -25,7 +25,6 @@ struct LineReader {
       return NULL;
     }
 
-    // TODO(yafei) strrchr
     while (strrchr(buf, '\n') == NULL) {
       len_ *= 2;
       buf.Realloc(len_);

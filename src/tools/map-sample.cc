@@ -49,21 +49,17 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
       if (value) {
         if (value == index) {
           Error("line %d, feature name is empty.\n", i + 1);
-          exit(2);
+          exit(3);
         }
         *value = '\0';
         value++;
         feature.value = strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          exit(3);
+          exit(4);
         }
       } else {
         feature.value = 1.0;
-      }
-
-      if (feature.value > -EPSILON && feature.value < EPSILON) {
-        continue;
       }
 
       FeatureMap::const_iterator it =
@@ -171,6 +167,7 @@ int main(int argc, char** argv) {
     ScopedFile fout(filename.c_str(), ScopedFile::Write);
     Log("Mapping \"%s\" to \"%s.libsvm\"...\n", argv[i], argv[i]);
     Process(fin, fout, feature_index_map);
+    Log("Done.\n\n");
   }
 
   return 0;

@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
     }
     Log("Reading \"%s\"...\n", argv[i]);
     problem.LoadBinary(fp);
+    Log("Done.\n\n");
   }
   return 0;
 }

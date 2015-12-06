@@ -19,7 +19,7 @@ struct LRModel {
   double positive_weight;
 
   // Real model stuffs here, they will be filled by TrainXXX functions.
-  double bias;  // < 0 if no bias term
+  double bias;  // no bias term if < 0
   int columns;  // number of features
   double* w;  // weights
 
@@ -35,6 +35,7 @@ struct LRModel {
   void UpdateFTRL(const FeatureNode* node);
 
   double Predict(const FeatureNode* node) const;
+  void Predict(FILE* fin, FILE* fout, bool fout_has_label) const;
 
   void Load(FILE* fp);
   void Save(FILE* fp) const;

@@ -15,6 +15,7 @@
 
 #if defined _WIN32
 #define strtoll _strtoi64
+#define snprintf _snprintf
 #endif
 
 #define _Malloc(type, n) (type*)xmalloc(((size_t)(n))*sizeof(type))
@@ -42,6 +43,14 @@
 #define MISSING_ARG(argc, argv, i) \
   Error("\"%s\" wants a value.\n", argv[i])
 
+#define COMSUME_1_ARG(argc, argv, i) \
+  do {\
+    for (int j = i; j < argc - 1; j++) {\
+      argv[j] = argv[j + 1];\
+    }\
+    argc -= 1;\
+  } while (0)
+
 #define COMSUME_2_ARG(argc, argv, i) \
   do {\
     for (int j = i; j < argc - 2; j++) {\
@@ -51,8 +60,6 @@
   } while (0)
 
 #define DELIMITER " \t|\n"
-
-#define EPSILON 1e-6
 
 inline FILE* yfopen(const char* filename, const char* mode) {
   FILE* fp = fopen(filename, mode);
@@ -107,7 +114,7 @@ inline void* xrealloc(void* memory, size_t new_size) {
   return p;
 }
 
-inline double xatof(const char* str) {
+inline double xatod(const char* str) {
   char* endptr;
   double d;
   errno = 0;
@@ -164,12 +171,16 @@ class ScopedFile {
     }
   }
 
-  operator FILE* () {return px_;}
-  operator const FILE* () const {return px_;}
+  operator FILE* () {
+    return px_;
+  }
+  operator const FILE* () const {
+    return px_;
+  }
 };
 
-// NOTE: this is only for "malloc" and "realloc",
-// not for "new".
+// NOTE: this is only for POD types.
+// It uses "malloc" and "realloc", but not "new".
 template <class T>
 class ScopedPtr {
  private:
@@ -208,14 +219,30 @@ class ScopedPtr {
     }
   }
 
-  operator T* () {return ptr_;}
-  operator const T* () const {return ptr_;}
-  T& operator *() {return *ptr_;}
-  const T& operator *() const {return *ptr_;}
-  T& operator[](int i) {return ptr_[i];}
-  const T& operator[](int i) const {return ptr_[i];}
-  T* operator->() {return ptr_;}
-  const T* operator->() const {return ptr_;}
+  operator T* () {
+    return ptr_;
+  }
+  operator const T* () const {
+    return ptr_;
+  }
+  T& operator *() {
+    return *ptr_;
+  }
+  const T& operator *() const {
+    return *ptr_;
+  }
+  T& operator[](int i) {
+    return ptr_[i];
+  }
+  const T& operator[](int i) const {
+    return ptr_[i];
+  }
+  T* operator->() {
+    return ptr_;
+  }
+  const T* operator->() const {
+    return ptr_;
+  }
 };
 
 #endif  // SRC_COMMON_X_H_

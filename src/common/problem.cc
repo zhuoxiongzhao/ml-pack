@@ -15,7 +15,7 @@ void Problem::Clear() {
   x_space.Free();
 }
 
-bool Problem::LoadText(FILE* fp, double _bias) {
+void Problem::LoadText(FILE* fp, double _bias) {
   LineReader line_reader;
   int max_column = 0, sample_max_column, i = 0, j = 0, k;
   char* endptr;
@@ -69,8 +69,7 @@ bool Problem::LoadText(FILE* fp, double _bias) {
     y[i] = strtod(label, &endptr);
     if (*endptr != '\0') {
       Error("line %d, label error.\n", i + 1);
-      Clear();
-      return false;
+      exit(2);
     }
 
     for (;;) {
@@ -83,16 +82,14 @@ bool Problem::LoadText(FILE* fp, double _bias) {
       if (value) {
         if (value == index) {
           Error("line %d, feature index is empty.\n", i + 1);
-          Clear();
-          return false;
+          exit(3);
         }
         *value = '\0';
         value++;
         x_space[j].value = strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          Clear();
-          return false;
+          exit(4);
         }
       } else {
         x_space[j].value = 1.0;
@@ -101,8 +98,7 @@ bool Problem::LoadText(FILE* fp, double _bias) {
       x_space[j].index = (int)strtoll(index, &endptr, 10);
       if (*endptr != '\0') {
         Error("line %d, feature index error \"%s\".\n", i + 1, index);
-        Clear();
-        return false;
+        exit(5);
       }
       if (x_space[j].index > sample_max_column) {
         sample_max_column = x_space[j].index;
@@ -121,8 +117,7 @@ bool Problem::LoadText(FILE* fp, double _bias) {
     }
 
     // a sentinel
-    x_space[j].index = -1;
-    x_space[j++].value = -1;
+    x_space[j++].index = -1;
 
     i++;
   }
@@ -137,8 +132,6 @@ bool Problem::LoadText(FILE* fp, double _bias) {
   } else {
     columns = max_column;
   }
-
-  return true;
 }
 
 void Problem::LoadBinary(FILE* fp) {
@@ -178,4 +171,83 @@ void Problem::SaveBinary(FILE* fp) const {
   xfwrite(&x_space_size, sizeof(x_space_size), 1, fp);
   xfwrite(y, sizeof(y[0]), rows, fp);
   xfwrite(x_space, sizeof(x_space[0]), x_space_size + rows, fp);
+}
+
+void Problem::GenerateNFold(
+  Problem* nfold_training,
+  Problem* nfold_testing,
+  int nfold) const {
+  int piece = rows / nfold;
+  int remains = rows % nfold;
+
+  for (int i = 0; i < nfold; i++) {
+    Problem* training, * testing;
+    int k;
+    int testing_rows = piece, training_rows;
+    int testing_begin = i * piece;
+    int testing_end = testing_begin + piece;
+    if (i == nfold - 1) {
+      testing_rows += remains;
+      testing_end += remains;
+    }
+    training_rows = rows - testing_rows;
+
+    training = nfold_training + i;
+    training->bias = bias;
+    training->rows = training_rows;
+    training->columns = columns;
+    training->y.Malloc(training_rows);
+    training->x.Malloc(training_rows);
+
+    testing = nfold_testing + i;
+    testing->bias = bias;
+    testing->rows = testing_rows;
+    testing->columns = columns;
+    testing->y.Malloc(testing_rows);
+    testing->x.Malloc(testing_rows);
+
+    for (int j = 0; j < testing_begin; j++) {
+      training->y[j] = y[j];
+      training->x[j] = x[j];
+    }
+    for (int j = testing_begin; j < testing_end; j++) {
+      k = j - testing_begin;
+      testing->y[k] = y[j];
+      testing->x[k] = x[j];
+    }
+    for (int j = testing_end; j < rows; j++) {
+      k = j - testing_end + testing_begin;
+      training->y[k] = y[j];
+      training->x[k] = x[j];
+    }
+  }
+}
+
+void Problem::GenerateTrainingTesting(
+  Problem* training,
+  Problem* testing,
+  double testing_portion) const {
+  int testing_rows = (int)(rows * testing_portion);
+  int training_rows = rows - testing_rows;
+  int k = 0;
+
+  training->bias = bias;
+  training->rows = training_rows;
+  training->columns = columns;
+  training->y.Malloc(training_rows);
+  training->x.Malloc(training_rows);
+  for (int j = 0; j < training_rows; j++, k++) {
+    training->y[j] = y[k];
+    training->x[j] = x[k];
+  }
+
+  testing->bias = bias;
+  testing->rows = testing_rows;
+  testing->columns = columns;
+  testing->y.Malloc(testing_rows);
+  testing->x.Malloc(testing_rows);
+  for (int j = 0; j < testing_rows; j++, k++) {
+    testing->y[j] = y[k];
+    testing->x[j] = x[k];
+  }
 }

@@ -35,21 +35,21 @@ void Evaluate(const double* pred,
   }
 
   if (tp + fp == 0) {
-    Log("No positive predicted samples(tp + fp = 0).\n");
+    Debug("No positive predicted samples(tp + fp = 0).\n");
     precision = 0.0;
   } else {
     precision = tp / (double) (tp + fp);
   }
 
   if (tp + fn == 0) {
-    Log("No positive true samples(tp + fn = 0).\n");
+    Debug("No positive true samples(tp + fn = 0).\n");
     recall = 0.0;
   } else {
     recall = tp / (double) (tp + fn);
   }
 
   if (precision + recall == 0) {
-    Log("precision + recall = 0.\n");
+    Debug("precision + recall = 0.\n");
     fscore = 0.0;
   } else {
     fscore = 2 * precision * recall / (precision + recall);
@@ -57,10 +57,10 @@ void Evaluate(const double* pred,
 
   accuracy = (tp + tn) / (double)size;
 
-  Log("Precision = %lg (%d/%d).\n", precision, tp, tp + fp);
-  Log("Recall = %lg (%d/%d).\n", recall, tp, tp + fn);
-  Log("FScore = %lg.\n", fscore);
-  Log("Accuracy = %lg (%d/%d).\n", accuracy, tp + tn, (int)size);
+  Debug("Precision = %lg (%d/%d).\n", precision, tp, tp + fp);
+  Debug("Recall = %lg (%d/%d).\n", recall, tp, tp + fn);
+  Debug("FScore = %lg.\n", fscore);
+  Debug("Accuracy = %lg (%d/%d).\n", accuracy, tp + tn, (int)size);
 
   metric->precision = precision;
   metric->recall = recall;
@@ -103,12 +103,12 @@ double EvaluateAUC(const double* pred,
   }
 
   if (tp == 0 || fp == 0) {
-    Log("No true positive or true nagetive samples.\n");
+    Debug("No true positive or true nagetive samples.\n");
     auc = 0.0;
   } else {
     auc = auc / tp / fp;
   }
 
-  Log("AUC = %lg.\n", auc);
+  Debug("AUC = %lg.\n\n", auc);
   return auc;
 }

@@ -21,7 +21,7 @@ struct FeatureNodeLess {
 };
 
 struct Problem {
-  double bias;  // < 0 if no bias term
+  double bias;  // no bias term if < 0
   int rows;  // number of samples
   int columns;  // number of features
   int x_space_size;
@@ -34,12 +34,25 @@ struct Problem {
 
   void Clear();
   // X format(fully compatible with LIBSVM format)
-  // "_bias" < 0 if no bias term
-  bool LoadText(FILE* fp, double _bias);
+  // "_bias" no bias term if < 0
+  void LoadText(FILE* fp, double _bias);
   void LoadBinary(FILE* fp);
   void SaveBinary(FILE* fp) const;
-};
 
-// TODO(yafei) make cross validation problem
+  // generate n-fold cross validation problems,
+  // the following fields will be filled:
+  // bias, rows, columns, y, x
+  void GenerateNFold(
+    Problem* nfold_training,
+    Problem* nfold_testing,
+    int nfold) const;
+  // generate training and testing problems,
+  // the following fields will be filled:
+  // bias, rows, columns, y, x
+  void GenerateTrainingTesting(
+    Problem* training,
+    Problem* testing,
+    double testing_portion) const;
+};
 
 #endif  // SRC_COMMON_PROBLEM_H_

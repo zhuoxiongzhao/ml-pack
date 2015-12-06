@@ -20,11 +20,8 @@ int main(int argc, char** argv) {
     {
       ScopedFile fin(argv[i], ScopedFile::Read);
       Log("Reading \"%s\"...\n", argv[i]);
-      if (!problem.LoadText(fin, 1.0)) {
-        continue;
-        Error("Failed.\n");
-      }
-      Log("Done.\n");
+      problem.LoadText(fin, 1.0);
+      Log("Done.\n\n");
     }
 
     {

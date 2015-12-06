@@ -24,7 +24,6 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
   char* label;
   char* index;
   char* value;
-  double feature_value;
   std::string name;
 
   while (line_reader.ReadLine(fp) != NULL) {
@@ -46,21 +45,15 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
       if (value) {
         if (value == index) {
           Error("line %d, feature name is empty.\n", i + 1);
-          exit(2);
+          exit(3);
         }
         *value = '\0';
         value++;
-        feature_value = strtod(value, &endptr);
+        strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          exit(3);
+          exit(4);
         }
-      } else {
-        feature_value = 1.0;
-      }
-
-      if (feature_value > -EPSILON && feature_value < EPSILON) {
-        continue;
       }
 
       name = index;
@@ -80,7 +73,7 @@ void SaveFeatureMap(FILE* fp, const FeatureMap& feature_count_map) {
       fprintf(fp, "%s\t%d\n", first->first.c_str(), first->second);
     }
   }
-  Log("Done.\n");
+  Log("Done.\n\n");
 }
 
 void Usage() {
@@ -155,6 +148,7 @@ int main(int argc, char** argv) {
     ScopedFile fp(argv[i], ScopedFile::Read);
     Log("Processing \"%s\"...\n", argv[i]);
     Process(fp, &feature_count_map);
+    Log("Done.\n\n");
   }
   {
     ScopedFile fp(feature_map_filename.c_str(), ScopedFile::Write);

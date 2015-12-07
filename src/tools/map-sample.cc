@@ -16,6 +16,8 @@ typedef std::map<std::string, int> FeatureMap;
 
 std::string feature_map_filename = "feature-map";
 int with_label = 1;
+int sort_feature = 1;
+std::string mapped_sample_filename = "-";
 
 void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
   LineReader line_reader;
@@ -24,23 +26,29 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
   char* label;
   char* index;
   char* value;
+  char* feature_begin;
   std::vector<FeatureNode> x;
   FeatureNode feature;
 
   while (line_reader.ReadLine(fin) != NULL) {
-    // label
-    label = strtok(line_reader.buf, DELIMITER);
-    if (label == NULL) {
-      // empty line
-      continue;
+    if (with_label) {
+      // label
+      label = strtok(line_reader.buf, DELIMITER);
+      if (label == NULL) {
+        // empty line
+        goto next_line;
+      }
+      fprintf(fout, "%s", label);
+      feature_begin = NULL;
+    } else {
+      feature_begin = line_reader.buf;
     }
-
-    fprintf(fout, "%s", label);
 
     // features
     x.clear();
     for (;;) {
-      index = strtok(NULL, DELIMITER);
+      index = strtok(feature_begin, DELIMITER);
+      feature_begin = NULL;
       if (index == NULL) {
         break;
       }
@@ -70,10 +78,22 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
       }
     }
 
-    std::sort(x.begin(), x.end(), FeatureNodeLess());
-    for (size_t j = 0; j < x.size(); j++) {
-      fprintf(fout, " %d:%g", x[j].index, x[j].value);
+    if (!x.empty()) {
+      // not an empty line
+      if (sort_feature) {
+        std::sort(x.begin(), x.end(), FeatureNodeLess());
+      }
+      if (with_label) {
+        fprintf(fout, " %d:%g", x[0].index, x[0].value);
+      } else {
+        fprintf(fout, "%d:%g", x[0].index, x[0].value);
+      }
+      for (size_t j = 1; j < x.size(); j++) {
+        fprintf(fout, " %d:%g", x[j].index, x[j].value);
+      }
     }
+
+next_line:
     fprintf(fout, "\n");
     i++;
   }
@@ -100,19 +120,25 @@ void LoadFeatureMap(FILE* fp, FeatureMap* feature_index_map) {
 
 void Usage() {
   fprintf(stderr,
-          "Usage: map-sample [options] SAMPLE_FILE1 [SAMPLE_FILE2] ...\n"
-          "  SAMPLE_FILE: input sample filename.\n"
-          "    A postfix \".libsvm\" will be added to SAMPLE_FILE.\n"
+          "Usage: map-sample [options] SAMPLE_FILE\n"
+          "  SAMPLE_FILE: input sample filename, \"-\" denotes stdin.\n"
           "\n"
           "  Options:\n"
-          "    -f FEATURE_MAP_FILENAME\n"
+          "    -f FEATURE_MAP_FILE\n"
           "      The input feature map filename.\n"
           "      Default is \"%s\".\n"
           "    -l WITH_LABEL(0 or 1)\n"
           "      Whether SAMPLE_FILE contains labels.\n"
-          "      Default is \"%d\".\n",
+          "      Default is \"%d\".\n"
+          "    -s SORT_FEATURE_BY_INDEX(0 or 1)\n"
+          "      Whether sort features by index.\n"
+          "      Default is \"%d\".\n"
+          "    -o MAPPED_SAMPLE_FILE\n"
+          "      Default is \"%s\".\n",
           feature_map_filename.c_str(),
-          with_label);
+          with_label,
+          sort_feature,
+          mapped_sample_filename.c_str());
   exit(1);
 }
 
@@ -142,6 +168,20 @@ int main(int argc, char** argv) {
       }
       with_label = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-s") {
+      if (i + 1 == argc) {
+        MISSING_ARG(argc, argv, i);
+        Usage();
+      }
+      sort_feature = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-o") {
+      if (i + 1 == argc) {
+        MISSING_ARG(argc, argv, i);
+        Usage();
+      }
+      mapped_sample_filename = argv[i + 1];
+      COMSUME_2_ARG(argc, argv, i);
     } else {
       i++;
     }
@@ -159,16 +199,13 @@ int main(int argc, char** argv) {
     ScopedFile fp(feature_map_filename.c_str(), ScopedFile::Read);
     LoadFeatureMap(fp, &feature_index_map);
   }
-
-  for (i = 1; i < argc; i++) {
-    std::string filename = argv[i];
-    filename += ".libsvm";
-    ScopedFile fin(argv[i], ScopedFile::Read);
-    ScopedFile fout(filename.c_str(), ScopedFile::Write);
-    Log("Mapping \"%s\" to \"%s.libsvm\"...\n", argv[i], argv[i]);
+  {
+    ScopedFile fin(argv[1], ScopedFile::Read);
+    ScopedFile fout(mapped_sample_filename.c_str(), ScopedFile::Write);
+    Log("Mapping \"%s\" to \"%s\"...\n",
+        argv[1], mapped_sample_filename.c_str());
     Process(fin, fout, feature_index_map);
     Log("Done.\n\n");
   }
-
   return 0;
 }

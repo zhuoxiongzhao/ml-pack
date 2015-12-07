@@ -24,19 +24,26 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
   char* label;
   char* index;
   char* value;
+  char* feature_begin;
   std::string name;
 
   while (line_reader.ReadLine(fp) != NULL) {
-    // label
-    label = strtok(line_reader.buf, DELIMITER);
-    if (label == NULL) {
-      // empty line
-      continue;
+    if (with_label) {
+      // label
+      label = strtok(line_reader.buf, DELIMITER);
+      if (label == NULL) {
+        // empty line
+        goto next_line;
+      }
+      feature_begin = NULL;
+    } else {
+      feature_begin = line_reader.buf;
     }
 
     // features
     for (;;) {
-      index = strtok(NULL, DELIMITER);
+      index = strtok(feature_begin, DELIMITER);
+      feature_begin = NULL;
       if (index == NULL) {
         break;
       }
@@ -60,6 +67,7 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
       (*feature_count_map)[name]++;
     }
 
+next_line:
     i++;
   }
 }
@@ -78,11 +86,11 @@ void SaveFeatureMap(FILE* fp, const FeatureMap& feature_count_map) {
 
 void Usage() {
   fprintf(stderr,
-          "Usage: gen-feature-map [options] SAMPLE_FILE1 [SAMPLE_FILE2] ...\n"
-          "  SAMPLE_FILE: input sample filename.\n"
+          "Usage: gen-feature-map [options] SAMPLE_FILE\n"
+          "  SAMPLE_FILE: input sample filename, \"-\" denotes stdin.\n"
           "\n"
           "  Options:\n"
-          "    -f FEATURE_MAP_FILENAME\n"
+          "    -f FEATURE_MAP_FILE\n"
           "      The output feature map filename.\n"
           "      Default is \"%s\".\n"
           "    -l WITH_LABEL(0 or 1)\n"
@@ -144,8 +152,8 @@ int main(int argc, char** argv) {
   }
 
   FeatureMap feature_count_map;
-  for (i = 1; i < argc; i++) {
-    ScopedFile fp(argv[i], ScopedFile::Read);
+  {
+    ScopedFile fp(argv[1], ScopedFile::Read);
     Log("Processing \"%s\"...\n", argv[i]);
     Process(fp, &feature_count_map);
     Log("Done.\n\n");

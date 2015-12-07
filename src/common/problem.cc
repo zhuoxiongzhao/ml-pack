@@ -118,7 +118,6 @@ void Problem::LoadText(FILE* fp, double _bias) {
 
     // a sentinel
     x_space[j++].index = -1;
-
     i++;
   }
 

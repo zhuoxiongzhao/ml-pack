@@ -145,28 +145,35 @@ double LRModel::Predict(const FeatureNode* node) const {
   return sigmoid(wx);
 }
 
-void LRModel::Predict(FILE* fin, FILE* fout, bool fout_has_label) const {
+void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
   LineReader line_reader;
   int i = 0, j;
   char* endptr;
   char* label;
   char* index;
   char* value;
+  char* feature_begin;
   ScopedPtr<FeatureNode> x_space;
   x_space.Malloc(columns);
 
   while (line_reader.ReadLine(fin) != NULL) {
-    // label
-    label = strtok(line_reader.buf, DELIMITER);
-    if (label == NULL) {
-      // empty line
-      continue;
+    if (with_label) {
+      // label
+      label = strtok(line_reader.buf, DELIMITER);
+      if (label == NULL) {
+        // empty line
+        goto next_line;
+      }
+      feature_begin = NULL;
+    } else {
+      feature_begin = line_reader.buf;
     }
 
     // features
     j = 0;
     for (;;) {
-      index = strtok(NULL, DELIMITER);
+      index = strtok(feature_begin, DELIMITER);
+      feature_begin = NULL;
       if (index == NULL) {
         break;
       }
@@ -197,14 +204,21 @@ void LRModel::Predict(FILE* fin, FILE* fout, bool fout_has_label) const {
       j++;
     }
 
-    if (bias >= 0.0) {
-      x_space[j++].value = bias;
+    if (j != 0) {
+      // not an empty line
+      if (bias >= 0.0) {
+        x_space[j].value = bias;
+        x_space[j++].index = columns;
+      }
+
+      // a sentinel
+      x_space[j++].index = -1;
+
+      fprintf(fout, "%lg", Predict(x_space));
     }
 
-    // a sentinel
-    x_space[j++].index = -1;
-
-    fprintf(fout, "%lg\n", Predict(x_space));
+next_line:
+    fprintf(fout, "\n");
     i++;
   }
 }

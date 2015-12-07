@@ -158,7 +158,15 @@ class ScopedFile {
 
   ScopedFile(const char* filename, Mode mode) {
     static const char* mode_map[] = {"r", "w", "rb", "wb"};
-    px_ = xfopen(filename, mode_map[mode]);
+    if (strcmp(filename, "-") == 0) {
+      if (mode == Read || mode == ReadBinary) {
+        px_ = stdin;
+      } else {
+        px_ = stdout;
+      }
+    } else {
+      px_ = xfopen(filename, mode_map[mode]);
+    }
   }
 
   ~ScopedFile() {
@@ -166,8 +174,14 @@ class ScopedFile {
   }
 
   void Close() {
+    if (px_ == stdin || px_ == stdout || px_ == stderr) {
+      px_ = NULL;
+      return;
+    }
+
     if (px_) {
       fclose(px_);
+      px_ = NULL;
     }
   }
 

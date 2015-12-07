@@ -12,7 +12,7 @@ int main() {
 #if defined _WIN32
     ScopedFile fp("../src/test-data/heart_scale", ScopedFile::Read);
 #else
-    ScopedFile fp("src/test-data/heart_scale", ScopedFile::Read);
+    ScopedFile fp("test-data/heart_scale", ScopedFile::Read);
 #endif
     problem.LoadText(fp, 1.0);
   }

@@ -10,7 +10,7 @@
 // 0, train
 // 1, predict
 int action = 0;
-
+// train
 std::string model_filename = "model";
 double eps = 1e-3;
 double l1_c = 1.0;
@@ -19,6 +19,9 @@ double positive_weight = 1.0;
 double bias = 1.0;
 double testing_portion = 0.0;
 int nfold = 0;
+// predict
+int with_label = 1;
+std::string predict_filename = "-";
 
 void Usage() {
   fprintf(stderr,
@@ -35,10 +38,10 @@ void SubUsage() {
   if (action == 0) {
     fprintf(stderr,
             "Usage: lr-main train [options] SAMPLE_FILE\n"
-            "  SAMPLE_FILE: input sample filename.\n"
+            "  SAMPLE_FILE: input sample filename, \"-\" denotes stdin.\n"
             "\n"
             "  Options:\n"
-            "    -m MODEL\n"
+            "    -o MODEL_FILE\n"
             "      Output model filename.\n"
             "      Default is \"%s\".\n"
             "    -e EPSILON\n"
@@ -62,12 +65,29 @@ void SubUsage() {
             "      Default is \"%lg\".\n"
             "    -cv N\n"
             "      N-fold cross validation, "
-            "enable if N > 0 and testing set is disabled\n"
+            "enabled if N > 0 and testing set is disabled\n"
             "      Default is \"%d\".\n",
             model_filename.c_str(),
             eps, l1_c, l2_c, positive_weight,
             bias, testing_portion, nfold);
   } else {
+    fprintf(stderr,
+            "Usage: lr-main predict [options] SAMPLE_FILE\n"
+            "  SAMPLE_FILE: input sample filename, \"-\" denotes stdin.\n"
+            "\n"
+            "  Options:\n"
+            "    -m MODEL_FILE\n"
+            "      Input model filename.\n"
+            "      Default is \"%s\".\n"
+            "    -l WITH_LABEL(0 or 1)\n"
+            "      Whether SAMPLE_FILE contains labels.\n"
+            "      Default is \"%d\".\n"
+            "    -o PREDICT_FILE\n"
+            "      Output predict filename, \"-\" denotes stdout.\n"
+            "      Default is \"%s\".\n",
+            model_filename.c_str(),
+            with_label,
+            predict_filename.c_str());
   }
   exit(1);
 }
@@ -84,7 +104,7 @@ void Train(int argc, char** argv) {
       SubUsage();
     }
 
-    if (s == "-m") {
+    if (s == "-o") {
       if (i + 1 == argc) {
         MISSING_ARG(argc, argv, i);
         SubUsage();
@@ -236,6 +256,60 @@ void Train(int argc, char** argv) {
 }
 
 void Predict(int argc, char** argv) {
+  if (argc == 1) {
+    SubUsage();
+  }
+
+  int i = 1;
+  for (;;) {
+    std::string s = argv[i];
+    if (s == "-h" || s == "-help" || s == "--help") {
+      SubUsage();
+    }
+
+    if (s == "-m") {
+      if (i + 1 == argc) {
+        MISSING_ARG(argc, argv, i);
+        SubUsage();
+      }
+      model_filename = argv[i + 1];
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-l") {
+      if (i + 1 == argc) {
+        MISSING_ARG(argc, argv, i);
+        SubUsage();
+      }
+      with_label = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-o") {
+      if (i + 1 == argc) {
+        MISSING_ARG(argc, argv, i);
+        SubUsage();
+      }
+      predict_filename = argv[i + 1];
+      COMSUME_2_ARG(argc, argv, i);
+    } else {
+      i++;
+    }
+    if (i == argc) {
+      break;
+    }
+  }
+
+  if (argc == 1) {
+    SubUsage();
+  }
+
+  LRModel model;
+  {
+    ScopedFile fp(model_filename.c_str(), ScopedFile::Read);
+    model.Load(fp);
+  }
+  {
+    ScopedFile fin(argv[1], ScopedFile::Read);
+    ScopedFile fout(predict_filename.c_str(), ScopedFile::Write);
+    model.Predict(fin, fout, with_label);
+  }
 }
 
 int main(int argc, char** argv) {

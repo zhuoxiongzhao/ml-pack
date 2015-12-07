@@ -35,7 +35,7 @@ struct LRModel {
   void UpdateFTRL(const FeatureNode* node);
 
   double Predict(const FeatureNode* node) const;
-  void Predict(FILE* fin, FILE* fout, bool fout_has_label) const;
+  void Predict(FILE* fin, FILE* fout, int with_label) const;
 
   void Load(FILE* fp);
   void Save(FILE* fp) const;

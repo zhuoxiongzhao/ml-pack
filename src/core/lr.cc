@@ -156,7 +156,7 @@ void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
   int error_flag;
   int j;
   ScopedPtr<FeatureNode> x_space;
-  x_space.Malloc(columns);
+  x_space.Malloc(columns + 1);
 
   while (line_reader.ReadLine(fin) != NULL) {
     if (with_label) {

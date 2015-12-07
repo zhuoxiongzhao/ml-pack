@@ -116,6 +116,7 @@ void LoadFeatureMap(FILE* fp, FeatureMap* feature_index_map) {
     }
 
     name = line;
+    // start from 1, not 0
     index = (int)feature_index_map->size() + 1;
     (*feature_index_map)[name] = index;
   }

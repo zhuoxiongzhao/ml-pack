@@ -25,6 +25,7 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
   char* index;
   char* value;
   char* feature_begin;
+  int error_flag;
   std::string name;
 
   while (line_reader.ReadLine(fp) != NULL) {
@@ -41,6 +42,7 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
     }
 
     // features
+    error_flag = 0;
     for (;;) {
       index = strtok(feature_begin, DELIMITER);
       feature_begin = NULL;
@@ -52,19 +54,21 @@ void Process(FILE* fp, FeatureMap* feature_count_map) {
       if (value) {
         if (value == index) {
           Error("line %d, feature name is empty.\n", i + 1);
-          exit(3);
+          error_flag = 1;
         }
         *value = '\0';
         value++;
         strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          exit(4);
+          error_flag = 1;
         }
       }
 
-      name = index;
-      (*feature_count_map)[name]++;
+      if (error_flag == 0) {
+        name = index;
+        (*feature_count_map)[name]++;
+      }
     }
 
 next_line:

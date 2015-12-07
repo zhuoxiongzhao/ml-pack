@@ -147,12 +147,14 @@ double LRModel::Predict(const FeatureNode* node) const {
 
 void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
   LineReader line_reader;
-  int i = 0, j;
+  int i = 0;
   char* endptr;
   char* label;
   char* index;
   char* value;
   char* feature_begin;
+  int error_flag;
+  int j;
   ScopedPtr<FeatureNode> x_space;
   x_space.Malloc(columns);
 
@@ -171,6 +173,7 @@ void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
 
     // features
     j = 0;
+    error_flag = 0;
     for (;;) {
       index = strtok(feature_begin, DELIMITER);
       feature_begin = NULL;
@@ -182,14 +185,14 @@ void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
       if (value) {
         if (value == index) {
           Error("line %d, feature index is empty.\n", i + 1);
-          exit(3);
+          error_flag = 1;
         }
         *value = '\0';
         value++;
         x_space[j].value = strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          exit(4);
+          error_flag = 1;
         }
       } else {
         x_space[j].value = 1.0;
@@ -198,14 +201,15 @@ void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
       x_space[j].index = (int)strtoll(index, &endptr, 10);
       if (*endptr != '\0') {
         Error("line %d, feature index error \"%s\".\n", i + 1, index);
-        exit(5);
+        error_flag = 1;
       }
 
-      j++;
+      if (error_flag == 0) {
+        j++;
+      }
     }
 
     if (j != 0) {
-      // not an empty line
       if (bias >= 0.0) {
         x_space[j].value = bias;
         x_space[j++].index = columns;

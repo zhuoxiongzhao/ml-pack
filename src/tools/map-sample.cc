@@ -27,6 +27,7 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
   char* index;
   char* value;
   char* feature_begin;
+  int error_flag;
   std::vector<FeatureNode> x;
   FeatureNode feature;
 
@@ -45,6 +46,7 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
     }
 
     // features
+    error_flag = 0;
     x.clear();
     for (;;) {
       index = strtok(feature_begin, DELIMITER);
@@ -57,29 +59,30 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
       if (value) {
         if (value == index) {
           Error("line %d, feature name is empty.\n", i + 1);
-          exit(3);
+          error_flag = 1;
         }
         *value = '\0';
         value++;
         feature.value = strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          exit(4);
+          error_flag = 1;
         }
       } else {
         feature.value = 1.0;
       }
 
-      FeatureMap::const_iterator it =
-        feature_index_map.find(std::string(index));
-      if (it != feature_index_map.end()) {
-        feature.index = it->second;
-        x.push_back(feature);
+      if (error_flag == 0) {
+        FeatureMap::const_iterator it =
+          feature_index_map.find(std::string(index));
+        if (it != feature_index_map.end()) {
+          feature.index = it->second;
+          x.push_back(feature);
+        }
       }
     }
 
     if (!x.empty()) {
-      // not an empty line
       if (sort_feature) {
         std::sort(x.begin(), x.end(), FeatureNodeLess());
       }

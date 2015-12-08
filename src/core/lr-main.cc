@@ -1,6 +1,8 @@
 // Copyright (c) 2015 Tencent Inc.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
+// lr train and predict
+//
 
 #include <string>
 
@@ -175,7 +177,7 @@ void Train(int argc, char** argv) {
   Problem problem;
   {
     ScopedFile fp(argv[1], ScopedFile::Read);
-    problem.LoadText(fp, bias);
+    problem.LoadX(fp, bias);
   }
 
   LRModel model;

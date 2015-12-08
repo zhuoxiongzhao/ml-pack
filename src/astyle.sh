@@ -1,3 +1,10 @@
+#! /bin/bash
+#
+# Author: Yafei Zhang (zhangyafeikimi@gmail.com)
+#
+# format code with astyle
+#
+
 astyle --style=google \
 --add-brackets \
 --align-pointer=type \
@@ -8,4 +15,4 @@ astyle --style=google \
 --lineend=linux \
 --pad-header \
 --pad-oper \
-$@
+$(find . -name "*.c" -or -name "*.cc" -or -name "*.h" | xargs)

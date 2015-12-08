@@ -2,8 +2,8 @@ AR=ar rc
 RANLIB=ranlib
 CXX=g++
 CC=gcc
-CFLAGS=-Wall -O2 -I.
-CXXFLAGS=-Wall -O2 -I.
+CFLAGS=-g -Wall -O2 -I.
+CXXFLAGS=-g -Wall -O2 -I.
 LDFLAGS=
 SYS=$(shell gcc -dumpmachine)
 

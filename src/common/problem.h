@@ -33,9 +33,16 @@ struct Problem {
   Problem() : bias(1.0), rows(0), columns(0), x_space_size(0) {}
 
   void Clear();
-  // X format(fully compatible with LIBSVM format)
+
+  // Load Engine 1: X numerical format(downward compatible with LIBSVM format).
   // "_bias" no bias term if < 0
-  void LoadText(FILE* fp, double _bias);
+  void LoadX(FILE* fp, double _bias);
+
+  // TODO(yafei): Load Engine 2: X text format.
+  // Feature names are hashed into a [1, dimension] space.
+  // "_bias" no bias term if < 0
+  void LoadXText(FILE* fp, double _bias, int dimension);
+
   void LoadBinary(FILE* fp);
   void SaveBinary(FILE* fp) const;
 

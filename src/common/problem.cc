@@ -15,7 +15,7 @@ void Problem::Clear() {
   x_space.Free();
 }
 
-void Problem::LoadText(FILE* fp, double _bias) {
+void Problem::LoadX(FILE* fp, double _bias) {
   LineReader line_reader;
   int i = 0;
   char* endptr;
@@ -114,6 +114,8 @@ void Problem::LoadText(FILE* fp, double _bias) {
       k++;
     }
 
+    // NOTE: don't check feature indices' order and duplication,
+    // users must guarantee that.
     if (sample_max_column > max_column) {
       max_column = sample_max_column;
     }
@@ -137,6 +139,9 @@ void Problem::LoadText(FILE* fp, double _bias) {
   } else {
     columns = max_column;
   }
+}
+
+void Problem::LoadXText(FILE* fp, double _bias, int dimension) {
 }
 
 void Problem::LoadBinary(FILE* fp) {

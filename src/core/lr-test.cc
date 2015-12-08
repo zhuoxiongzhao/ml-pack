@@ -1,6 +1,8 @@
 // Copyright (c) 2015 Tencent Inc.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
+// tests for lr.cc
+//
 
 #include "core/lr.h"
 #include "common/metric.h"
@@ -14,7 +16,7 @@ int main() {
 #else
     ScopedFile fp("test-data/heart_scale", ScopedFile::Read);
 #endif
-    problem.LoadText(fp, 1.0);
+    problem.LoadX(fp, 1.0);
   }
 
   LRModel model;

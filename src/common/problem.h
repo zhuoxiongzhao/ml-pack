@@ -10,7 +10,7 @@
 #include "common/x.h"
 
 struct FeatureNode {
-  int index;
+  int index;  // index starts from 1
   double value;
 };
 

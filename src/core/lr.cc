@@ -140,6 +140,7 @@ void LRModel::TrainLBFGS(const Problem& problem) {
 double LRModel::Predict(const FeatureNode* node) const {
   double wx = 0.0;
   for (; node->index != -1; node++) {
+    // index starts from 1
     wx += w[node->index - 1] * node->value;
   }
   return sigmoid(wx);
@@ -201,6 +202,10 @@ void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
       x_space[j].index = (int)strtoll(index, &endptr, 10);
       if (*endptr != '\0') {
         Error("line %d, feature index error \"%s\".\n", i + 1, index);
+        error_flag = 1;
+      }
+      if (x_space[j].index == 0) {
+        Error("line %d, feature index must start from 1.\n", i + 1);
         error_flag = 1;
       }
 

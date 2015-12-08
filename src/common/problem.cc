@@ -17,11 +17,12 @@ void Problem::Clear() {
 
 void Problem::LoadText(FILE* fp, double _bias) {
   LineReader line_reader;
-  int max_column = 0, sample_max_column, i = 0, j = 0, k;
+  int i = 0;
   char* endptr;
   char* label;
   char* index;
   char* value;
+  int max_column = 0, sample_max_column, j = 0, k;
 
   Clear();
   bias = _bias;
@@ -100,6 +101,11 @@ void Problem::LoadText(FILE* fp, double _bias) {
         Error("line %d, feature index error \"%s\".\n", i + 1, index);
         exit(5);
       }
+      if (x_space[j].index == 0) {
+        Error("line %d, feature index must start from 1.\n", i + 1);
+        exit(6);
+      }
+
       if (x_space[j].index > sample_max_column) {
         sample_max_column = x_space[j].index;
       }

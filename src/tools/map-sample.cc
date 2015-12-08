@@ -29,7 +29,7 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
   char* feature_begin;
   int error_flag;
   std::vector<FeatureNode> x;
-  FeatureNode feature;
+  FeatureNode node;
 
   while (line_reader.ReadLine(fin) != NULL) {
     if (with_label) {
@@ -63,21 +63,21 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
         }
         *value = '\0';
         value++;
-        feature.value = strtod(value, &endptr);
+        node.value = strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
           error_flag = 1;
         }
       } else {
-        feature.value = 1.0;
+        node.value = 1.0;
       }
 
       if (error_flag == 0) {
         FeatureMap::const_iterator it =
           feature_index_map.find(std::string(index));
         if (it != feature_index_map.end()) {
-          feature.index = it->second;
-          x.push_back(feature);
+          node.index = it->second;
+          x.push_back(node);
         }
       }
     }
@@ -116,7 +116,7 @@ void LoadFeatureMap(FILE* fp, FeatureMap* feature_index_map) {
     }
 
     name = line;
-    // start from 1, not 0
+    // index starts from 1
     index = (int)feature_index_map->size() + 1;
     (*feature_index_map)[name] = index;
   }

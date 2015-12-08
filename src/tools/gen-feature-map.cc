@@ -94,7 +94,7 @@ void Usage() {
           "  SAMPLE_FILE: input sample filename, \"-\" denotes stdin.\n"
           "\n"
           "  Options:\n"
-          "    -f FEATURE_MAP_FILE\n"
+          "    -o FEATURE_MAP_FILE\n"
           "      The output feature map filename.\n"
           "      Default is \"%s\".\n"
           "    -l WITH_LABEL(0 or 1)\n"
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
       Usage();
     }
 
-    if (s == "-f") {
+    if (s == "-o") {
       if (i + 1 == argc) {
         MISSING_ARG(argc, argv, i);
         Usage();

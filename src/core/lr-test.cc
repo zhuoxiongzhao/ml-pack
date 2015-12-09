@@ -16,27 +16,28 @@ int main() {
 #else
     ScopedFile fp("test-data/heart_scale", ScopedFile::Read);
 #endif
-    problem.LoadX(fp, 1.0);
+    problem.LoadText(fp, 1.0);
   }
 
   LRModel model;
-  model.l1_c = 0.0;
-  model.l2_c = 1.0;
+  model.l1_c() = 0.0;
+  model.l2_c() = 1.0;
+  model.TrainLBFGS(problem);
+  model.Save(stdout);
+  model.Clear();
+
+  model.l1_c() = 1.0;
+  model.l2_c() = 0.0;
   model.TrainLBFGS(problem);
   model.Save(stdout);
 
-  model.l1_c = 1.0;
-  model.l2_c = 0.0;
-  model.TrainLBFGS(problem);
-  model.Save(stdout);
-
-  ScopedPtr<double> pred;
-  pred.Malloc(problem.rows);
-  for (int i = 0; i < problem.rows; i++) {
-    pred[i] = model.Predict(problem.x[i]);
+  std::vector<double> pred;
+  pred.resize(problem.rows());
+  for (int i = 0; i < problem.rows(); i++) {
+    pred[i] = model.Predict(problem.x(i));
   }
 
   BinaryClassificationMetric metric;
-  Evaluate(pred, problem.y, problem.rows, &metric);
+  Evaluate(pred, problem.y(), &metric);
   return 0;
 }

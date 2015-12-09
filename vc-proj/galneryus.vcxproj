@@ -17,6 +17,9 @@
     <ClInclude Include="..\src\common\problem.h" />
     <ClInclude Include="..\src\common\x.h" />
     <ClInclude Include="..\src\core\lr.h" />
+    <ClInclude Include="..\src\hash\city.h" />
+    <ClInclude Include="..\src\hash\hash-entry.h" />
+    <ClInclude Include="..\src\hash\hash-function.h" />
     <ClInclude Include="..\src\lbfgs\lbfgs.h" />
   </ItemGroup>
   <ItemGroup>
@@ -28,6 +31,9 @@
     <ClCompile Include="..\src\common\metric.cc" />
     <ClCompile Include="..\src\common\problem.cc" />
     <ClCompile Include="..\src\core\lr.cc" />
+    <ClCompile Include="..\src\hash\city.cc" />
+    <ClCompile Include="..\src\hash\hash-entry.cc" />
+    <ClCompile Include="..\src\hash\hash-function.c" />
     <ClCompile Include="..\src\lbfgs\lbfgs.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

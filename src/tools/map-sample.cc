@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <map>
 #include <string>
-#include <vector>
 
 #include "common/line-reader.h"
 #include "common/problem.h"
@@ -28,7 +27,7 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
   char* value;
   char* feature_begin;
   int error_flag;
-  std::vector<FeatureNode> x;
+  FeatureNodeVector x;
   FeatureNode node;
 
   while (line_reader.ReadLine(fin) != NULL) {
@@ -63,7 +62,7 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
         }
         *value = '\0';
         value++;
-        node.value = strtod(value, &endptr);
+        node.value = (float)strtod(value, &endptr);
         if (*endptr != '\0') {
           Error("line %d, feature value error \"%s\".\n", i + 1, value);
           error_flag = 1;

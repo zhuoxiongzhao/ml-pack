@@ -4,77 +4,62 @@
 
 #include "common/problem.h"
 #include "common/line-reader.h"
+#include "hash/hash-entry.h"
 
-void Problem::Clear() {
-  bias = 1.0;
-  rows = 0;
-  columns = 0;
-  x_space_size = 0;
-  y.Free();
-  x.Free();
-  x_space.Free();
-}
-
-void Problem::LoadX(FILE* fp, double _bias) {
+void ForeachFeatureNode(
+  FILE* fp,
+  double bias,
+  int with_label,
+  int sort_x_by_index,
+  void* arg,
+  FeatureNodeProc callback) {
   LineReader line_reader;
-  int i = 0;
+  int line_no = 1;
   char* endptr;
   char* label;
   char* index;
   char* value;
-  int max_column = 0, sample_max_column, j = 0, k;
+  char* feature_begin;
+  int error_flag;
+  int feature_error_flag;
+  double y;
+  int sample_max_column;
+  FeatureNodeVector x;
+  FeatureNode xj;
 
-  Clear();
-  bias = _bias;
-
-  // Debug("1st turn.\n");
-  while (line_reader.ReadLine(fp) != NULL) {
-    // label
-    label = strtok(line_reader.buf, DELIMITER);
-    if (label == NULL) {
-      // empty line
-      continue;
-    }
-
-    // features
-    for (;;) {
-      index = strtok(NULL, DELIMITER);
-      if (index == NULL) {
-        break;
-      }
-      x_space_size++;
-    }
-    if (bias >= 0.0) {
-      x_space_size++;
-    }
-    rows++;
+  if (bias <= 0.0) {
+    bias = 0.0;
   }
-  Debug("rows=%d\n", rows);
-  Debug("x_space_size=%d\n", x_space_size);
 
-  // Debug("2nd turn.\n");
-  rewind(fp);
-  y.Malloc(rows);
-  x.Malloc(rows);
-  x_space.Malloc(x_space_size + rows);
   while (line_reader.ReadLine(fp) != NULL) {
-    label = strtok(line_reader.buf, DELIMITER);
-    if (label == NULL) {
-      // empty line
-      continue;
-    }
-
+    error_flag = Success;
+    feature_error_flag = 0;
     sample_max_column = 0;
-    k = 0;
-    x[i] = &x_space[j];
-    y[i] = strtod(label, &endptr);
-    if (*endptr != '\0') {
-      Error("line %d, label error.\n", i + 1);
-      exit(2);
+    y = 0.0;
+    x.clear();
+
+    // I.label
+    if (with_label) {
+      label = strtok(line_reader.buf, DELIMITER);
+      if (label == NULL) {
+        // empty line
+        error_flag |= LineEmpty;
+        goto callback_label;
+      }
+      feature_begin = NULL;
+      y = strtod(label, &endptr);
+      if (*endptr != '\0') {
+        Error("line %d, label error.\n", line_no);
+        error_flag |= LabelError;
+      }
+    } else {
+      feature_begin = line_reader.buf;
     }
 
+    // II.features
     for (;;) {
-      index = strtok(NULL, DELIMITER);
+      index = strtok(feature_begin, DELIMITER);
+      feature_begin = NULL;
       if (index == NULL) {
         break;
       }
@@ -82,117 +67,311 @@ void Problem::LoadX(FILE* fp, double _bias) {
       value = strrchr(index, ':');
       if (value) {
         if (value == index) {
-          Error("line %d, feature index is empty.\n", i + 1);
-          exit(3);
+          Error("line %d, feature index is empty.\n", line_no);
+          feature_error_flag = 1;
         }
         *value = '\0';
         value++;
-        x_space[j].value = strtod(value, &endptr);
+        xj.value = (float)strtod(value, &endptr);
         if (*endptr != '\0') {
-          Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          exit(4);
+          Error("line %d, feature value error \"%s\".\n", line_no, value);
+          feature_error_flag = 1;
         }
       } else {
-        x_space[j].value = 1.0;
+        xj.value = 1.0f;
       }
 
-      x_space[j].index = (int)strtoll(index, &endptr, 10);
+      xj.index = (int)strtoll(index, &endptr, 10);
       if (*endptr != '\0') {
-        Error("line %d, feature index error \"%s\".\n", i + 1, index);
-        exit(5);
+        Error("line %d, feature index error \"%s\".\n", line_no, index);
+        feature_error_flag = 1;
       }
-      if (x_space[j].index == 0) {
-        Error("line %d, feature index must start from 1.\n", i + 1);
-        exit(6);
-      }
-
-      if (x_space[j].index > sample_max_column) {
-        sample_max_column = x_space[j].index;
+      if (xj.index == 0) {
+        Error("line %d, feature index must start from 1.\n", line_no);
+        feature_error_flag = 1;
       }
 
-      j++;
-      k++;
+      if (feature_error_flag == 0) {
+        if (xj.index > sample_max_column) {
+          sample_max_column = xj.index;
+        }
+        x.push_back(xj);
+      }
     }
 
-    // NOTE: don't check feature indices' order and duplication,
-    // users must guarantee that.
-    if (sample_max_column > max_column) {
-      max_column = sample_max_column;
+    if (sort_x_by_index) {
+      std::sort(x.begin(), x.end(), FeatureNodeLess());
+    }
+    if (x.empty()) {
+      error_flag |= FeatureEmpty;
     }
 
-    if (bias >= 0.0) {
-      x_space[j++].value = bias;
-    }
+    // the last term is the bias term with index -1
+    xj.index = -1;
+    xj.value = (float)bias;
+    x.push_back(xj);
 
-    // a sentinel
-    x_space[j++].index = -1;
-    i++;
-  }
-
-  if (bias >= 0.0) {
-    columns = max_column + 1;
-    for (i = 1; i < rows; i++) {
-      // assign bias term's index
-      (x[i] - 2)->index = columns;
-    }
-    x_space[j - 2].index = columns;
-  } else {
-    columns = max_column;
+callback_label:
+    callback(bias, with_label, sort_x_by_index, arg,
+             y, sample_max_column, &x, error_flag);
+    line_no++;
   }
 }
 
-void Problem::LoadXText(FILE* fp, double _bias, int dimension) {
+void ForeachFeatureNameNode(
+  FILE* fp,
+  double bias,
+  int with_label,
+  int sort_x_by_index,
+  void* arg,
+  FeatureNameNodeProc callback) {
+  LineReader line_reader;
+  int line_no = 1;
+  char* endptr;
+  char* label;
+  char* index;
+  char* value;
+  char* feature_begin;
+  int error_flag;
+  int feature_error_flag;
+  double y;
+  int sample_max_column;
+  FeatureNameNodeVector x;
+  FeatureNameNode xj;
+
+  if (bias <= 0.0) {
+    bias = 0.0;
+  }
+
+  while (line_reader.ReadLine(fp) != NULL) {
+    error_flag = Success;
+    feature_error_flag = 0;
+    sample_max_column = 0;
+    y = 0.0;
+    x.clear();
+
+    // I.label
+    if (with_label) {
+      label = strtok(line_reader.buf, DELIMITER);
+      if (label == NULL) {
+        // empty line
+        error_flag |= LineEmpty;
+        goto callback_label;
+      }
+      feature_begin = NULL;
+      y = strtod(label, &endptr);
+      if (*endptr != '\0') {
+        Error("line %d, label error.\n", line_no);
+        error_flag |= LabelError;
+      }
+    } else {
+      feature_begin = line_reader.buf;
+    }
+
+    // II.features
+    for (;;) {
+      index = strtok(feature_begin, DELIMITER);
+      feature_begin = NULL;
+      if (index == NULL) {
+        break;
+      }
+
+      value = strrchr(index, ':');
+      if (value) {
+        if (value == index) {
+          Error("line %d, feature index is empty.\n", line_no);
+          feature_error_flag = 1;
+        }
+        *value = '\0';
+        value++;
+        xj.value = (float)strtod(value, &endptr);
+        if (*endptr != '\0') {
+          Error("line %d, feature value error \"%s\".\n", line_no, value);
+          feature_error_flag = 1;
+        }
+      } else {
+        xj.value = 1.0f;
+      }
+
+      xj.name = index;
+
+      if (feature_error_flag == 0) {
+        x.push_back(xj);
+      }
+    }
+
+    if (x.empty()) {
+      error_flag |= FeatureEmpty;
+    }
+
+    // the last term is the bias term with an empty name
+    xj.name.clear();
+    xj.value = (float)bias;
+    x.push_back(xj);
+
+callback_label:
+    callback(bias, with_label, sort_x_by_index, arg,
+             y, sample_max_column, &x, error_flag);
+    line_no++;
+  }
+}
+
+Problem::Problem() {
+  bias_ = 1.0;
+  columns_ = 0;
+  own_x_space_ = 0;
+  x_space_ = NULL;
+}
+
+Problem::~Problem() {
+  Clear();
+}
+
+void Problem::Clear() {
+  bias_ = 1.0;
+  columns_ = 0;
+  y_.clear();
+  x_index_.clear();
+  if (own_x_space_) {
+    delete x_space_;
+  }
+  own_x_space_ = 0;
+  x_space_ = NULL;
+}
+
+int Problem::LoadTextProc(
+  double bias,
+  int with_label,
+  int sort_x_by_index,
+  void* arg,
+  double y,
+  int sample_max_column,
+  FeatureNodeVector* x,
+  int error_flag) {
+  if (error_flag) {
+    return error_flag;
+  }
+
+  Problem* problem = (Problem*)arg;
+  if (sample_max_column > problem->columns_) {
+    problem->columns_ = sample_max_column;
+  }
+  problem->y_.push_back(y);
+  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size());
+  problem->x_space_->insert(problem->x_space_->end(), x->begin(), x->end());
+  return 0;
+}
+
+void Problem::LoadText(FILE* fp, double _bias) {
+  Clear();
+
+  bias_ = _bias;
+  x_index_.push_back(0);
+  own_x_space_ = 1;
+  x_space_ = new FeatureNodeVector();
+  ForeachFeatureNode(fp, bias_, 1, 1, this, &LoadTextProc);
+  x_index_.pop_back();
+  if (bias_ > 0.0) {
+    columns_++;
+  }
+}
+
+int Problem::LoadHashTextProc(
+  double bias,
+  int with_label,
+  int sort_x_by_index,
+  void* arg,
+  double y,
+  int sample_max_column,
+  FeatureNameNodeVector* x,
+  int error_flag) {
+  if (error_flag) {
+    return error_flag;
+  }
+
+  Problem* problem = (Problem*)arg;
+  problem->y_.push_back(y);
+  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size());
+
+  int size = (int)x->size();
+  for (int i = 0; i < size; i++) {
+    FeatureNode node;
+    const FeatureNameNode& name_node = (*x)[i];
+    if (name_node.name.empty()) {
+      node.index = -1;
+    } else {
+      node.index = (unsigned int)HashString(name_node.name)
+                   % problem->columns() + 1;
+    }
+    node.value = name_node.value;
+    problem->x_space_->push_back(node);
+  }
+  return 0;
+}
+
+void Problem::LoadHashText(FILE* fp, double _bias, int dimension) {
+  Clear();
+
+  bias_ = _bias;
+  columns_ = dimension;
+  x_index_.push_back(0);
+  own_x_space_ = 1;
+  x_space_ = new FeatureNodeVector();
+  ForeachFeatureNameNode(fp, bias_, 1, 1, this, &LoadHashTextProc);
+  x_index_.pop_back();
+  if (bias_ > 0.0) {
+    columns_++;
+  }
 }
 
 void Problem::LoadBinary(FILE* fp) {
   Clear();
 
-  xfread(&bias, sizeof(bias), 1, fp);
-  xfread(&rows, sizeof(rows), 1, fp);
-  xfread(&columns, sizeof(columns), 1, fp);
+  int _rows;
+  int x_space_size;
+  xfread(&bias_, sizeof(bias_), 1, fp);
+  xfread(&_rows, sizeof(_rows), 1, fp);
+  xfread(&columns_, sizeof(columns_), 1, fp);
   xfread(&x_space_size, sizeof(x_space_size), 1, fp);
 
-  y.Malloc(rows);
-  x.Malloc(rows);
-  x_space.Malloc(x_space_size + rows);
+  y_.resize(_rows);
+  x_index_.resize(_rows);
+  x_space_ = new FeatureNodeVector();
+  x_space_->resize(x_space_size);
 
-  xfread(y, sizeof(y[0]), rows, fp);
-  xfread(x_space, sizeof(x_space[0]), x_space_size + rows, fp);
+  xfread(&y_[0], sizeof(y_[0]), _rows, fp);
+  xfread(&(*x_space_)[0], sizeof((*x_space_)[0]), x_space_size, fp);
 
-  for (int i = 0, j = 0; i < rows;) {
-    x[i] = &x_space[j];
-    for (;;) {
-      if (x_space[j].index != -1) {
-        j++;
-      } else {
-        // sentinel
-        j++;
-        i++;
-        break;
-      }
+  x_index_.push_back(0);
+  for (int i = 0; i < x_space_size; i++) {
+    if ((*x_space_)[i].index == -1) {
+      x_index_.push_back(i);
     }
   }
+  x_index_.pop_back();
 }
 
 void Problem::SaveBinary(FILE* fp) const {
-  xfwrite(&bias, sizeof(bias), 1, fp);
-  xfwrite(&rows, sizeof(rows), 1, fp);
-  xfwrite(&columns, sizeof(columns), 1, fp);
+  int _rows = rows();
+  int x_space_size = (int)x_space_->size();
+  xfwrite(&bias_, sizeof(bias_), 1, fp);
+  xfwrite(&_rows, sizeof(_rows), 1, fp);
+  xfwrite(&columns_, sizeof(columns_), 1, fp);
   xfwrite(&x_space_size, sizeof(x_space_size), 1, fp);
-  xfwrite(y, sizeof(y[0]), rows, fp);
-  xfwrite(x_space, sizeof(x_space[0]), x_space_size + rows, fp);
+  xfwrite(&y_[0], sizeof(y_[0]), _rows, fp);
+  xfwrite(&(*x_space_)[0], sizeof((*x_space_)[0]), x_space_size, fp);
 }
 
 void Problem::GenerateNFold(
   Problem* nfold_training,
   Problem* nfold_testing,
   int nfold) const {
-  int piece = rows / nfold;
-  int remains = rows % nfold;
+  int _rows = rows();
+  int piece = _rows / nfold;
+  int remains = _rows % nfold;
 
   for (int i = 0; i < nfold; i++) {
     Problem* training, * testing;
-    int k;
     int testing_rows = piece, training_rows;
     int testing_begin = i * piece;
     int testing_end = testing_begin + piece;
@@ -200,35 +379,37 @@ void Problem::GenerateNFold(
       testing_rows += remains;
       testing_end += remains;
     }
-    training_rows = rows - testing_rows;
+    training_rows = _rows - testing_rows;
 
     training = nfold_training + i;
-    training->bias = bias;
-    training->rows = training_rows;
-    training->columns = columns;
-    training->y.Malloc(training_rows);
-    training->x.Malloc(training_rows);
+    training->Clear();
+    training->bias_ = bias_;
+    training->columns_ = columns_;
+    training->y_.reserve(training_rows);
+    training->x_index_.reserve(training_rows);
+    training->own_x_space_ = 0;
+    training->x_space_ = x_space_;
 
     testing = nfold_testing + i;
-    testing->bias = bias;
-    testing->rows = testing_rows;
-    testing->columns = columns;
-    testing->y.Malloc(testing_rows);
-    testing->x.Malloc(testing_rows);
+    testing->Clear();
+    testing->bias_ = bias_;
+    testing->columns_ = columns_;
+    testing->y_.reserve(testing_rows);
+    testing->x_index_.reserve(testing_rows);
+    testing->own_x_space_ = 0;
+    testing->x_space_ = x_space_;
 
     for (int j = 0; j < testing_begin; j++) {
-      training->y[j] = y[j];
-      training->x[j] = x[j];
+      training->y_.push_back(y_[j]);
+      training->x_index_.push_back(x_index_[j]);
     }
     for (int j = testing_begin; j < testing_end; j++) {
-      k = j - testing_begin;
-      testing->y[k] = y[j];
-      testing->x[k] = x[j];
+      testing->y_.push_back(y_[j]);
+      testing->x_index_.push_back(x_index_[j]);
     }
-    for (int j = testing_end; j < rows; j++) {
-      k = j - testing_end + testing_begin;
-      training->y[k] = y[j];
-      training->x[k] = x[j];
+    for (int j = testing_end; j < _rows; j++) {
+      training->y_.push_back(y_[j]);
+      training->x_index_.push_back(x_index_[j]);
     }
   }
 }
@@ -237,27 +418,34 @@ void Problem::GenerateTrainingTesting(
   Problem* training,
   Problem* testing,
   double testing_portion) const {
-  int testing_rows = (int)(rows * testing_portion);
-  int training_rows = rows - testing_rows;
+  int _rows = rows();
+  int testing_rows = (int)(_rows * testing_portion);
+  int training_rows = _rows - testing_rows;
   int k = 0;
 
-  training->bias = bias;
-  training->rows = training_rows;
-  training->columns = columns;
-  training->y.Malloc(training_rows);
-  training->x.Malloc(training_rows);
+  training->Clear();
+  training->bias_ = bias_;
+  training->columns_ = columns_;
+  training->y_.reserve(training_rows);
+  training->x_index_.reserve(training_rows);
+  training->own_x_space_ = 0;
+  training->x_space_ = x_space_;
+
   for (int j = 0; j < training_rows; j++, k++) {
-    training->y[j] = y[k];
-    training->x[j] = x[k];
+    training->y_.push_back(y_[k]);
+    training->x_index_.push_back(x_index_[k]);
   }
 
-  testing->bias = bias;
-  testing->rows = testing_rows;
-  testing->columns = columns;
-  testing->y.Malloc(testing_rows);
-  testing->x.Malloc(testing_rows);
+  testing->Clear();
+  testing->bias_ = bias_;
+  testing->columns_ = columns_;
+  testing->y_.reserve(testing_rows);
+  testing->x_index_.reserve(testing_rows);
+  testing->own_x_space_ = 0;
+  testing->x_space_ = x_space_;
+
   for (int j = 0; j < testing_rows; j++, k++) {
-    testing->y[j] = y[k];
-    testing->x[j] = x[k];
+    testing->y_.push_back(y_[k]);
+    testing->x_index_.push_back(x_index_[k]);
   }
 }

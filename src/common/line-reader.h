@@ -12,11 +12,16 @@
 struct LineReader {
  private:
   size_t len_;
+
  public:
-  ScopedPtr<char> buf;
+  char* buf;
 
   LineReader() : len_(4096) {
-    buf.Malloc(len_);
+    buf = _Malloc(char, len_);
+  }
+
+  ~LineReader() {
+    free(buf);
   }
 
   char* ReadLine(FILE* fp) {
@@ -27,7 +32,7 @@ struct LineReader {
 
     while (strrchr(buf, '\n') == NULL) {
       len_ *= 2;
-      buf.Realloc(len_);
+      buf = _Realloc(buf, char, len_);
       new_len = strlen(buf);
       if (fgets(buf + new_len, len_ - new_len, fp) == NULL) {
         break;

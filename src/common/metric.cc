@@ -4,18 +4,15 @@
 // model performance evaluation metrics
 //
 
-#include <algorithm>
-#include <vector>
-
 #include "common/metric.h"
 #include "common/x.h"
 
-void Evaluate(const double* pred,
-              const double* y,
-              int size,
+void Evaluate(const std::vector<double>& pred,
+              const std::vector<double>& y,
               BinaryClassificationMetric* metric,
               double theshold) {
   int tp = 0, fp = 0, fn = 0, tn = 0;
+  int size = (int)y.size();
   double precision, recall, fscore, accuracy;
 
   for (int i = 0; i < size; i++) {
@@ -66,7 +63,7 @@ void Evaluate(const double* pred,
   metric->recall = recall;
   metric->fscore = fscore;
   metric->accuracy = accuracy;
-  metric->auc = EvaluateAUC(pred, y, size);
+  metric->auc = EvaluateAUC(pred, y);
 }
 
 class IndicesCompare {
@@ -80,9 +77,9 @@ class IndicesCompare {
   }
 };
 
-double EvaluateAUC(const double* pred,
-                   const double* y,
-                   int size) {
+double EvaluateAUC(const std::vector<double>& pred,
+                   const std::vector<double>& y) {
+  int size = (int)y.size();
   std::vector<int> indices(size);
   int tp = 0, fp = 0;
   double auc = 0.0;

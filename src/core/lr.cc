@@ -2,31 +2,39 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
-#include <math.h>
-
 #include "core/lr.h"
 #include "blas/blas-decl.h"
 #include "common/line-reader.h"
 #include "lbfgs/lbfgs.h"
 
-LRModel::LRModel() : eps(1e-6), l1_c(0.0), l2_c(0.0),
-  positive_weight(1.0),
-  bias(1.0), columns(0), w(NULL) {}
+LRModel::LRModel() {
+  eps_ = 1e-6;
+  l1_c_ = 0.0;
+  l2_c_ = 0.0;
+  positive_weight_ = 1.0;
+  ftrl_alpha_ = 0.0;
+  ftrl_beta_ = 0.0;
+  bias_ = 1.0;
+  columns_ = 0;
+  w_ = NULL;
+}
 
 LRModel::~LRModel() {
   Clear();
 }
 
 void LRModel::Clear() {
-  eps = 1e-6;
-  l1_c = 0.0;
-  l2_c = 0.0;
-  positive_weight = 1.0;
-  bias = 1.0;
-  columns = 0;
-  if (w) {
-    vecfree(w);
-    w = NULL;
+  eps_ = 1e-6;
+  l1_c_ = 0.0;
+  l2_c_ = 0.0;
+  positive_weight_ = 1.0;
+  ftrl_alpha_ = 0.0;
+  ftrl_beta_ = 0.0;
+  bias_ = 1.0;
+  columns_ = 0;
+  if (w_) {
+    vecfree(w_);
+    w_ = NULL;
   }
 }
 
@@ -51,24 +59,30 @@ static double LRLoss(
   const Problem& problem = *parameter->problem;
   LRModel* model = parameter->model;
 
-  register int i, rows = problem.rows;
+  register int i;
+  register int rows = problem.rows();
+  int columns = problem.columns();
+  double bias = problem.bias();
   register double wx, h, hh;
   register double fx = 0.0, weighted_rows = 0.0;
-  register FeatureNode* node;
-  register double positive_weight = model->positive_weight;
+  register const FeatureNode* xi;
+  register double positive_weight = model->positive_weight();
 
-  dcopy(problem.columns, &ZERO, 0, g, 1);
+  dcopy(columns, &ZERO, 0, g, 1);
 
   for (i = 0; i < rows; i++) {
     // h = sigmoid(w^t * x)
     wx = 0.0;
-    for (node = problem.x[i]; node->index != -1; node++) {
-      wx += node->value * w[node->index - 1];
+    for (xi = problem.x(i); xi->index != -1; xi++) {
+      wx += xi->value * w[xi->index - 1];
+    }
+    if (bias > 0.0) {
+      wx += xi->value * w[columns - 1];
     }
     h = sigmoid(wx);
 
     // accumulate loss function
-    if (problem.y[i] == 1.0) {
+    if (problem.y(i) == 1.0f) {
       weighted_rows += positive_weight;
       fx -= positive_weight * log(h);
       hh = positive_weight * (h - 1.0);
@@ -79,23 +93,26 @@ static double LRLoss(
     }
 
     // gradient
-    for (node = problem.x[i]; node->index != -1; node++) {
-      g[node->index - 1] += (hh * node->value);
+    for (xi = problem.x(i); xi->index != -1; xi++) {
+      g[xi->index - 1] += (hh * xi->value);
+    }
+    if (bias > 0.0) {
+      g[columns - 1] += (hh * xi->value);
     }
   }
 
   // deal with L2-regularization
-  if (model->l2_c != 0.0) {
+  if (model->l2_c() != 0.0) {
     // penalty the weight of bias term or not?
     // fx = fx + C||w||/2
-    fx += (model->l2_c / 2.0 * ddot(problem.columns, w, 1, w, 1));
+    fx += (model->l2_c() / 2.0 * ddot(columns, w, 1, w, 1));
     // g = g + Cw
-    daxpy(problem.columns, model->l2_c, w, 1, g, 1);
+    daxpy(columns, model->l2_c(), w, 1, g, 1);
   }
 
   // scale according to total sample weights
   fx = fx / weighted_rows;
-  dscal(problem.columns, 1.0 / weighted_rows, g, 1);
+  dscal(columns, 1.0 / weighted_rows, g, 1);
   return fx;
 }
 
@@ -119,145 +136,94 @@ static int LRProgress(
 void LRModel::TrainLBFGS(const Problem& problem) {
   LossParameter loss_param = {&problem, this};
   lbfgs_parameter_t param;
-
   lbfgs_default_parameter(&param);
-  param.epsilon = eps;
-  if (l1_c != 0.0) {
+  param.epsilon = eps_;
+  if (l1_c_ != 0.0) {
     // NOTE
-    param.orthantwise_c = l1_c / (double)problem.rows;
+    param.orthantwise_c = l1_c_ / (double)problem.rows();
     param.orthantwise_start = 0;
-    param.orthantwise_end = problem.columns;
+    param.orthantwise_end = problem.columns();
     param.linesearch = LBFGS_LINESEARCH_BACKTRACKING_WOLFE;
   }
 
-  bias = problem.bias;
-  columns = problem.columns;
-  w = vecalloc(columns);
-  int ret = lbfgs(columns, w, 0, &LRLoss, &LRProgress, &loss_param, &param);
+  bias_ = problem.bias();
+  columns_ = problem.columns();
+  w_ = vecalloc(columns_);
+  int ret = lbfgs(columns_, w_, 0, &LRLoss, &LRProgress, &loss_param, &param);
   Log("Optimization terminated with status code = %d.\n\n", ret);
 }
 
 double LRModel::Predict(const FeatureNode* node) const {
   double wx = 0.0;
   for (; node->index != -1; node++) {
-    // index starts from 1
-    wx += w[node->index - 1] * node->value;
+    wx += w_[node->index - 1] * node->value;
+  }
+  if (bias_ > 0.0) {
+    wx += node->value * w_[columns_ - 1];
   }
   return sigmoid(wx);
 }
 
-void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
-  LineReader line_reader;
-  int i = 0;
-  char* endptr;
-  char* label;
-  char* index;
-  char* value;
-  char* feature_begin;
-  int error_flag;
-  int j;
-  ScopedPtr<FeatureNode> x_space;
-  x_space.Malloc(columns + 1);
+struct LRModelFout {
+  const LRModel* model;
+  FILE* fout;
+};
 
-  while (line_reader.ReadLine(fin) != NULL) {
-    if (with_label) {
-      // label
-      label = strtok(line_reader.buf, DELIMITER);
-      if (label == NULL) {
-        // empty line
-        goto next_line;
-      }
-      feature_begin = NULL;
-    } else {
-      feature_begin = line_reader.buf;
-    }
-
-    // features
-    j = 0;
-    error_flag = 0;
-    for (;;) {
-      index = strtok(feature_begin, DELIMITER);
-      feature_begin = NULL;
-      if (index == NULL) {
-        break;
-      }
-
-      value = strrchr(index, ':');
-      if (value) {
-        if (value == index) {
-          Error("line %d, feature index is empty.\n", i + 1);
-          error_flag = 1;
-        }
-        *value = '\0';
-        value++;
-        x_space[j].value = strtod(value, &endptr);
-        if (*endptr != '\0') {
-          Error("line %d, feature value error \"%s\".\n", i + 1, value);
-          error_flag = 1;
-        }
-      } else {
-        x_space[j].value = 1.0;
-      }
-
-      x_space[j].index = (int)strtoll(index, &endptr, 10);
-      if (*endptr != '\0') {
-        Error("line %d, feature index error \"%s\".\n", i + 1, index);
-        error_flag = 1;
-      }
-      if (x_space[j].index == 0) {
-        Error("line %d, feature index must start from 1.\n", i + 1);
-        error_flag = 1;
-      }
-
-      if (error_flag == 0) {
-        j++;
-      }
-    }
-
-    if (j != 0) {
-      if (bias >= 0.0) {
-        x_space[j].value = bias;
-        x_space[j++].index = columns;
-      }
-
-      // a sentinel
-      x_space[j++].index = -1;
-
-      fprintf(fout, "%lg", Predict(x_space));
-    }
-
-next_line:
-    fprintf(fout, "\n");
-    i++;
+int LRModel::PredictFeatureNodeProc(
+  double bias,
+  int with_label,
+  int sort_x_by_index,
+  void* arg,
+  double y,
+  int sample_max_column,
+  FeatureNodeVector* x,
+  int error_flag) {
+  const LRModel* model = ((LRModelFout*)arg)->model;
+  FILE* fout = ((LRModelFout*)arg)->fout;
+  if (error_flag == Success) {
+    fprintf(fout, "%lg", model->Predict(&(*x)[0]));
   }
+  fprintf(fout, "\n");
+  return 0;
+}
+
+void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
+  LRModelFout arg;
+  arg.model = this;
+  arg.fout = fout;
+  ::ForeachFeatureNode(fin, bias_, with_label, 0, &arg,
+                       &PredictFeatureNodeProc);
 }
 
 void LRModel::Load(FILE* fp) {
-  fscanf(fp, "eps=%lg\n", &eps);
-  fscanf(fp, "l1_c=%lg\n", &l1_c);
-  fscanf(fp, "l2_c=%lg\n", &l2_c);
-  fscanf(fp, "positive_weight=%lg\n", &positive_weight);
-  fscanf(fp, "bias=%lg\n", &bias);
-  fscanf(fp, "columns=%d\n", &columns);
-  fscanf(fp, "eps=%lg\n", &eps);
+  fscanf(fp, "eps=%lg\n", &eps_);
+  fscanf(fp, "l1_c=%lg\n", &l1_c_);
+  fscanf(fp, "l2_c=%lg\n", &l2_c_);
+  fscanf(fp, "positive_weight=%lg\n", &positive_weight_);
+  fscanf(fp, "ftrl_alpha=%lg\n", &ftrl_alpha_);
+  fscanf(fp, "ftrl_beta=%lg\n", &ftrl_beta_);
+  fscanf(fp, "bias=%lg\n", &bias_);
+  fscanf(fp, "columns=%d\n", &columns_);
 
   fscanf(fp, "\nweights:\n");
-  w = vecalloc(columns);
-  for (int i = 0; i < columns; i++) {
-    fscanf(fp, "%lg\n", &w[i]);
+  w_ = vecalloc(columns_);
+  for (int i = 0; i < columns_; i++) {
+    fscanf(fp, "%lg\n", &w_[i]);
   }
 }
 
 void LRModel::Save(FILE* fp) const {
-  fprintf(fp, "eps=%lg\n", eps);
-  fprintf(fp, "l1_c=%lg\n", l1_c);
-  fprintf(fp, "l2_c=%lg\n", l2_c);
-  fprintf(fp, "positive_weight=%lg\n", positive_weight);
-  fprintf(fp, "bias=%lg\n", bias);
-  fprintf(fp, "columns=%d\n", columns);
+  fprintf(fp, "eps=%lg\n", eps_);
+  fprintf(fp, "l1_c=%lg\n", l1_c_);
+  fprintf(fp, "l2_c=%lg\n", l2_c_);
+  fprintf(fp, "positive_weight=%lg\n", positive_weight_);
+  fprintf(fp, "ftrl_alpha=%lg\n", ftrl_alpha_);
+  fprintf(fp, "ftrl_beta=%lg\n", ftrl_beta_);
+  fprintf(fp, "bias=%lg\n", bias_);
+  fprintf(fp, "columns=%d\n", columns_);
 
   fprintf(fp, "\nweights:\n");
-  for (int i = 0; i < columns; i++) {
-    fprintf(fp, "%lg\n", w[i]);
+  for (int i = 0; i < columns_; i++) {
+    fprintf(fp, "%lg\n", w_[i]);
   }
 }

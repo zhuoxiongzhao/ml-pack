@@ -28,6 +28,9 @@ blas/dswap.o \
 common/metric.o \
 common/problem.o \
 core/lr.o \
+hash/city.o \
+hash/hash-entry.o \
+hash/hash-function.o \
 lbfgs/lbfgs.o
 
 LIB=libx.a
@@ -52,6 +55,9 @@ blas/%.o: blas/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 lbfgs/lbfgs.o: lbfgs/lbfgs.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+hash/hash-function.o: hash/hash-function.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 lr-main$(EXE): core/lr-main.cc $(LIB)

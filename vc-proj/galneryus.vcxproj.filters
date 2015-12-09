@@ -13,6 +13,9 @@
     <Filter Include="lbfgs">
       <UniqueIdentifier>{f59be907-271d-41e8-adc9-59c376cd7c3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hash">
+      <UniqueIdentifier>{0579f2a1-4c3a-45c9-b264-e407ac89e4f9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\blas\blas-decl.h">
@@ -35,6 +38,15 @@
     </ClInclude>
     <ClInclude Include="..\src\lbfgs\lbfgs.h">
       <Filter>lbfgs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\hash\city.h">
+      <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\hash\hash-function.h">
+      <Filter>hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\hash\hash-entry.h">
+      <Filter>hash</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -64,6 +76,15 @@
     </ClCompile>
     <ClCompile Include="..\src\lbfgs\lbfgs.c">
       <Filter>lbfgs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hash\city.cc">
+      <Filter>hash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hash\hash-function.c">
+      <Filter>hash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\hash\hash-entry.cc">
+      <Filter>hash</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -8,10 +8,15 @@
 #define SRC_COMMON_X_H_
 
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <algorithm>
+#include <string>
+#include <vector>
 
 #if defined _WIN32
 #define strtoll _strtoi64
@@ -190,72 +195,6 @@ class ScopedFile {
   }
   operator const FILE* () const {
     return px_;
-  }
-};
-
-// NOTE: this is only for POD types.
-// It uses "malloc" and "realloc", but not "new".
-template <class T>
-class ScopedPtr {
- private:
-  T* ptr_;
-  ScopedPtr(const ScopedPtr&);
-  ScopedPtr& operator=(const ScopedPtr&);
-
- public:
-  ScopedPtr(): ptr_(NULL) {}
-
-  ScopedPtr(T* p): ptr_(p) {}  // NOLINT
-
-  ScopedPtr& operator=(T* p) {
-    Free();
-    ptr_ = p;
-    return *this;
-  }
-
-  ~ScopedPtr() {
-    Free();
-  }
-
-  void Malloc(size_t size) {
-    Free();
-    ptr_ = _Malloc(T, size);
-  }
-
-  void Realloc(size_t size) {
-    ptr_ = _Realloc(ptr_, T, size);
-  }
-
-  void Free() {
-    if (ptr_) {
-      ::free(ptr_);
-      ptr_ = NULL;
-    }
-  }
-
-  operator T* () {
-    return ptr_;
-  }
-  operator const T* () const {
-    return ptr_;
-  }
-  T& operator *() {
-    return *ptr_;
-  }
-  const T& operator *() const {
-    return *ptr_;
-  }
-  T& operator[](int i) {
-    return ptr_[i];
-  }
-  const T& operator[](int i) const {
-    return ptr_[i];
-  }
-  T* operator->() {
-    return ptr_;
-  }
-  const T* operator->() const {
-    return ptr_;
   }
 };
 

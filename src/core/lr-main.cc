@@ -14,7 +14,7 @@
 int action = 0;
 // train
 std::string model_filename = "model";
-double eps = 1e-3;
+double eps = 1e-6;
 double l1_c = 1.0;
 double l2_c = 0.0;
 double positive_weight = 1.0;
@@ -59,7 +59,7 @@ void SubUsage() {
             "      Weights of all positive samples.\n"
             "      Default is \"%lg\".\n"
             "    -b BIAS\n"
-            "      Value of the bias term(no bias term if BIAS < 0).\n"
+            "      Value of the bias term(no bias term if BIAS <= 0).\n"
             "      Default is \"%lg\".\n"
             "    -t TESTING_PORTION\n"
             "      Portion of testing set, "
@@ -177,22 +177,23 @@ void Train(int argc, char** argv) {
   Problem problem;
   {
     ScopedFile fp(argv[1], ScopedFile::Read);
-    problem.LoadX(fp, bias);
+    problem.LoadText(fp, bias);
+    //problem.LoadHashText(fp, bias, 1024);
   }
 
   LRModel model;
-  model.eps = eps;
-  model.l1_c = l1_c;
-  model.l2_c = l2_c;
-  model.positive_weight = positive_weight;
+  model.eps() = eps;
+  model.l1_c() = l1_c;
+  model.l2_c() = l2_c;
+  model.positive_weight() = positive_weight;
 
   if (testing_portion > 0.0 && testing_portion < 1.0) {
     Problem training, testing;
 
     Log("Splitting training and testing samples.\n");
     problem.GenerateTrainingTesting(&training, &testing, testing_portion);
-    Log("%d samples are used to train.\n", training.rows);
-    Log("%d samples are used to test.\n", testing.rows);
+    Log("%d samples are used to train.\n", training.rows());
+    Log("%d samples are used to test.\n", testing.rows());
     Log("Done.\n\n");
 
     model.TrainLBFGS(training);
@@ -203,14 +204,14 @@ void Train(int argc, char** argv) {
       Log("Done.\n\n");
     }
 
-    ScopedPtr<double> pred;
-    pred.Malloc(testing.rows);
-    for (int j = 0; j < testing.rows; j++) {
-      pred[j] = model.Predict(testing.x[j]);
+    std::vector<double> pred;
+    pred.reserve(testing.rows());
+    for (int j = 0; j < testing.rows(); j++) {
+      pred.push_back(model.Predict(testing.x(j)));
     }
 
     BinaryClassificationMetric metric;
-    Evaluate(pred, testing.y, testing.rows, &metric);
+    Evaluate(pred, testing.y(), &metric);
   } else if (nfold > 0) {
     Problem* nfold_training = new Problem[nfold];
     Problem* nfold_testing = new Problem[nfold];
@@ -234,14 +235,14 @@ void Train(int argc, char** argv) {
         Log("Done.\n\n");
       }
 
-      ScopedPtr<double> pred;
-      pred.Malloc(nfold_testing[i].rows);
-      for (int j = 0; j < nfold_testing[i].rows; j++) {
-        pred[j] = model.Predict(nfold_testing[i].x[j]);
+      std::vector<double> pred;
+      pred.reserve(nfold_testing[i].rows());
+      for (int j = 0; j < nfold_testing[i].rows(); j++) {
+        pred.push_back(model.Predict(nfold_testing[i].x(j)));
       }
 
       BinaryClassificationMetric metric;
-      Evaluate(pred, nfold_testing[i].y, nfold_testing[i].rows, &metric);
+      Evaluate(pred, nfold_testing[i].y(), &metric);
     }
 
     delete [] nfold_training;

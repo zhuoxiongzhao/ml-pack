@@ -4,9 +4,9 @@
 
 #include <algorithm>
 
-#include "common/problem.h"
-#include "common/line-reader.h"
-#include "hash/hash-entry.h"
+#include "core/problem.h"
+#include "core/line-reader.h"
+#include "core/hash-entry.h"
 
 void ForeachFeatureNode(
   FILE* fp,

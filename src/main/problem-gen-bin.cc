@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "common/problem.h"
+#include "core/problem.h"
 
 int main(int argc, char** argv) {
   if (argc == 1) {

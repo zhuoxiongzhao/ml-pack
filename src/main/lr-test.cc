@@ -5,7 +5,7 @@
 //
 
 #include "core/lr.h"
-#include "common/metric.h"
+#include "core/metric.h"
 
 int main() {
   Problem problem;

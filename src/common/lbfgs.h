@@ -46,8 +46,8 @@
 * advisable in any important application.  All use of these programs is
 * entirely at the user's own risk.
 */
-#ifndef SRC_LBFGS_LBFGS_H_
-#define SRC_LBFGS_LBFGS_H_
+#ifndef SRC_COMMON_LBFGS_H_
+#define SRC_COMMON_LBFGS_H_
 
 #if defined __cplusplus
 # define EXTERN extern "C"
@@ -463,4 +463,4 @@ typedef int (*optimize_t)(
   const lbfgs_parameter_t* param
 );
 
-#endif  /* SRC_LBFGS_LBFGS_H_ */
+#endif  /* SRC_COMMON_LBFGS_H_ */

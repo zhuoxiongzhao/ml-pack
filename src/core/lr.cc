@@ -3,10 +3,10 @@
 //
 
 #include "core/lr.h"
-#include "blas/blas-decl.h"
-#include "common/line-reader.h"
-#include "hash/hash-entry.h"
-#include "lbfgs/lbfgs.h"
+#include "core/hash-entry.h"
+#include "core/line-reader.h"
+#include "common/blas-decl.h"
+#include "common/lbfgs.h"
 
 LRModel::LRModel() {
   eps_ = 1e-6;

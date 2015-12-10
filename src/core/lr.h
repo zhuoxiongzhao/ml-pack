@@ -7,7 +7,7 @@
 #ifndef SRC_CORE_LR_H_
 #define SRC_CORE_LR_H_
 
-#include "common/problem.h"
+#include "core/problem.h"
 
 class LRModel {
  private:

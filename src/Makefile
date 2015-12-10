@@ -2,8 +2,8 @@ AR=ar rc
 RANLIB=ranlib
 CXX=g++
 CC=gcc
-CFLAGS=-g -Wall -O2 -I.
-CXXFLAGS=-g -Wall -O2 -I.
+CFLAGS=-g -Wall -O3 -I.
+CXXFLAGS=-g -Wall -O3 -I.
 LDFLAGS=
 SYS=$(shell gcc -dumpmachine)
 
@@ -20,65 +20,73 @@ else
 	LDFLAGS+=-static
 endif
 
-OBJECT=blas/daxpy.o \
-blas/dcopy.o \
-blas/ddot.o \
-blas/dscal.o \
-blas/dswap.o \
-common/metric.o \
-common/problem.o \
+OBJECT=common/daxpy.o \
+common/dcopy.o \
+common/ddot.o \
+common/dscal.o \
+common/dswap.o \
+common/city.o \
+common/hash-function.o \
+common/lbfgs.o \
+core/hash-entry.o \
 core/lr.o \
-hash/city.o \
-hash/hash-entry.o \
-hash/hash-function.o \
-lbfgs/lbfgs.o
+core/metric.o \
+core/problem.o
 
 LIB=libx.a
 
 BIN= \
 lr-main$(EXE) \
 lr-test$(EXE) \
-lbfgs-test$(EXE) \
 gen-feature-map$(EXE) \
 map-sample$(EXE) \
 problem-gen-bin$(EXE) \
 problem-load-bin$(EXE)
 
 .PHONY: clean
-all: $(LIB) $(BIN) lbfgs
+all: $(LIB) $(BIN)
 
 $(LIB): $(OBJECT)
 	$(AR) $@ $^
 	$(RANLIB) $@
 
-blas/%.o: blas/%.c
+common/daxpy.o: common/daxpy.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-lbfgs/lbfgs.o: lbfgs/lbfgs.c
+common/dcopy.o: common/dcopy.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-hash/hash-function.o: hash/hash-function.c
+common/ddot.o: common/ddot.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-lr-main$(EXE): core/lr-main.cc $(LIB)
+common/dscal.o: common/dscal.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+common/dswap.o: common/dswap.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+common/lbfgs.o: common/lbfgs.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+common/hash-function.o: common/hash-function.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+lr-main$(EXE): main/lr-main.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-lr-test$(EXE): core/lr-test.cc $(LIB)
+lr-test$(EXE): main/lr-test.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-lbfgs-test$(EXE): lbfgs/lbfgs-test.c $(LIB)
-	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-gen-feature-map$(EXE): tools/gen-feature-map.cc $(LIB)
+gen-feature-map$(EXE): main/gen-feature-map.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-map-sample$(EXE): tools/map-sample.cc $(LIB)
+map-sample$(EXE): main/map-sample.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-problem-gen-bin$(EXE): tools/problem-gen-bin.cc $(LIB)
+problem-gen-bin$(EXE): main/problem-gen-bin.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-problem-load-bin$(EXE): tools/problem-load-bin.cc $(LIB)
+problem-load-bin$(EXE): main/problem-load-bin.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:

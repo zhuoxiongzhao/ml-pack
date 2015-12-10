@@ -4,9 +4,9 @@
 
 #include <string.h>
 
-#include "hash/hash-entry.h"
-#include "hash/city.h"
-#include "hash/hash-function.h"
+#include "core/hash-entry.h"
+#include "common/city.h"
+#include "common/hash-function.h"
 
 typedef uint32_t (* Hash32Func)(const char* key, size_t length);
 

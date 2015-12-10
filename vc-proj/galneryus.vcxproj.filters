@@ -1,90 +1,84 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="blas">
-      <UniqueIdentifier>{afc434a1-ebfd-4a53-889b-739f186cbce3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="common">
       <UniqueIdentifier>{1859a7f7-90b0-4573-aa55-ad949dbd156a}</UniqueIdentifier>
     </Filter>
     <Filter Include="core">
       <UniqueIdentifier>{9454f025-2650-471b-9867-fea8147bc127}</UniqueIdentifier>
     </Filter>
-    <Filter Include="lbfgs">
-      <UniqueIdentifier>{f59be907-271d-41e8-adc9-59c376cd7c3e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="hash">
-      <UniqueIdentifier>{0579f2a1-4c3a-45c9-b264-e407ac89e4f9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\blas\blas-decl.h">
-      <Filter>blas</Filter>
+    <ClInclude Include="..\src\core\hash-entry.h">
+      <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\common\line-reader.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\common\metric.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\common\problem.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\common\x.h">
-      <Filter>common</Filter>
+    <ClInclude Include="..\src\core\line-reader.h">
+      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\lr.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lbfgs\lbfgs.h">
-      <Filter>lbfgs</Filter>
+    <ClInclude Include="..\src\core\metric.h">
+      <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\hash\city.h">
-      <Filter>hash</Filter>
+    <ClInclude Include="..\src\core\problem.h">
+      <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\hash\hash-function.h">
-      <Filter>hash</Filter>
+    <ClInclude Include="..\src\core\x.h">
+      <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\hash\hash-entry.h">
-      <Filter>hash</Filter>
+    <ClInclude Include="..\src\common\blas-decl.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\city.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\hash-function.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\lbfgs.h">
+      <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\blas\daxpy.c">
-      <Filter>blas</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\blas\dcopy.c">
-      <Filter>blas</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\blas\ddot.c">
-      <Filter>blas</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\blas\dscal.c">
-      <Filter>blas</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\blas\dswap.c">
-      <Filter>blas</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\common\metric.cc">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\common\problem.cc">
-      <Filter>common</Filter>
+    <ClCompile Include="..\src\core\hash-entry.cc">
+      <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\lr.cc">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\lbfgs\lbfgs.c">
-      <Filter>lbfgs</Filter>
+    <ClCompile Include="..\src\core\metric.cc">
+      <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\hash\city.cc">
-      <Filter>hash</Filter>
+    <ClCompile Include="..\src\core\problem.cc">
+      <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\hash\hash-function.c">
-      <Filter>hash</Filter>
+    <ClCompile Include="..\src\common\city.cc">
+      <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\hash\hash-entry.cc">
-      <Filter>hash</Filter>
+    <ClCompile Include="..\src\common\daxpy.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\dcopy.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\ddot.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\dscal.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\dswap.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\hash-function.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\lbfgs.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\lbfgs-test.c">
+      <Filter>common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

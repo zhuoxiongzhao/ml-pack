@@ -7,9 +7,9 @@
 #include <map>
 #include <string>
 
-#include "common/line-reader.h"
-#include "common/problem.h"
-#include "common/x.h"
+#include "core/line-reader.h"
+#include "core/problem.h"
+#include "core/x.h"
 
 typedef std::map<std::string, int> FeatureMap;
 

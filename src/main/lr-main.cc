@@ -6,8 +6,8 @@
 
 #include <string>
 
-#include "common/metric.h"
 #include "core/lr.h"
+#include "core/metric.h"
 
 // 0, train
 // 1, predict

@@ -54,7 +54,7 @@
 #include <memory.h>
 
 #include "lbfgs.h"
-#include "blas/blas-decl.h"
+#include "blas-decl.h"
 
 #if defined _MSC_VER
 # define inline __inline

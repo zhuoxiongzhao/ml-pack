@@ -7,7 +7,7 @@
 #ifndef SRC_COMMON_LINE_READER_H_
 #define SRC_COMMON_LINE_READER_H_
 
-#include "common/x.h"
+#include "core/x.h"
 
 struct LineReader {
  private:

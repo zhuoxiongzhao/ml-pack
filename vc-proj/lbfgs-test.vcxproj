@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\lbfgs\lbfgs-test.c" />
+    <ClCompile Include="..\src\common\lbfgs-test.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3F1768DD-4C95-4C09-BF3F-20E2E8177F17}</ProjectGuid>

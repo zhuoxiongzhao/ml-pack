@@ -4,8 +4,8 @@
 // some hash functions
 //
 
-#ifndef SRC_HASH_HASH_FUNCTION_H_
-#define SRC_HASH_HASH_FUNCTION_H_
+#ifndef SRC_COMMON_HASH_FUNCTION_H_
+#define SRC_COMMON_HASH_FUNCTION_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -32,4 +32,4 @@ extern "C" {
 }
 #endif
 
-#endif  // SRC_HASH_HASH_FUNCTION_H_
+#endif  /* SRC_COMMON_HASH_FUNCTION_H_ */

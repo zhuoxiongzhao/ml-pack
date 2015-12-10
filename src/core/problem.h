@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "common/x.h"
+#include "core/x.h"
 
 struct FeatureNode {
   int index;  // index starts from 1

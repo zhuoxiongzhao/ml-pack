@@ -7,6 +7,9 @@
 #ifndef SRC_COMMON_PROBLEM_H_
 #define SRC_COMMON_PROBLEM_H_
 
+#include <string>
+#include <vector>
+
 #include "common/x.h"
 
 struct FeatureNode {
@@ -37,7 +40,6 @@ enum ErrorFlag {
 };
 
 typedef int (* FeatureNodeProc)(
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -48,14 +50,12 @@ typedef int (* FeatureNodeProc)(
 
 void ForeachFeatureNode(
   FILE* fp,
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
   FeatureNodeProc callback);
 
 typedef int (* FeatureNameNodeProc)(
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -66,7 +66,6 @@ typedef int (* FeatureNameNodeProc)(
 
 void ForeachFeatureNameNode(
   FILE* fp,
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -83,7 +82,6 @@ class Problem {
 
  private:
   static int LoadTextProc(
-    double bias,
     int with_label,
     int sort_x_by_index,
     void* arg,
@@ -93,7 +91,6 @@ class Problem {
     int error_flag);
 
   static int LoadHashTextProc(
-    double bias,
     int with_label,
     int sort_x_by_index,
     void* arg,

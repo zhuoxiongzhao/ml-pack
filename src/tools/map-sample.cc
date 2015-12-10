@@ -158,31 +158,19 @@ int main(int argc, char** argv) {
     }
 
     if (s == "-f") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        Usage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, Usage());
       feature_map_filename = argv[i + 1];
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-l") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        Usage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, Usage());
       with_label = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-s") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        Usage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, Usage());
       sort_feature = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-o") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        Usage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, Usage());
       mapped_sample_filename = argv[i + 1];
       COMSUME_2_ARG(argc, argv, i);
     } else {

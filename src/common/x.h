@@ -14,10 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <algorithm>
-#include <string>
-#include <vector>
-
 #if defined _WIN32
 #define strtoll _strtoi64
 #define snprintf _snprintf
@@ -63,6 +59,15 @@
     }\
     argc -= 2;\
   } while (0)
+
+#define CHECK_MISSING_ARG(argc, argv, i, action) do \
+  { \
+    if (i + 1 == argc) { \
+      MISSING_ARG(argc, argv, i); \
+      action; \
+    } \
+  } \
+  while (0)
 
 #define DELIMITER " \t|\n"
 

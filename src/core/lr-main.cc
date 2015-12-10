@@ -14,6 +14,11 @@
 int action = 0;
 // train
 std::string model_filename = "model";
+// 0, text
+// 1, hash text
+// 2, binary
+int sample_file_type = 0;
+int hash_dimension = 0;
 double eps = 1e-6;
 double l1_c = 1.0;
 double l2_c = 0.0;
@@ -46,6 +51,14 @@ void SubUsage() {
             "    -o MODEL_FILE\n"
             "      Output model filename.\n"
             "      Default is \"%s\".\n"
+            "    -ft SAMPLE_FILE_TYPE\n"
+            "      Type of SAMPLE_FILE. 0, text; 1, hash text; 2, binary.\n"
+            "      Default is \"%d\".\n"
+            "    -d HASH_DIMENSION\n"
+            "      Feature names in SAMPLE_FILE will be "
+            "hashed into [1, dimension], "
+            "enabled if SAMPLE_FILE_TYPE = 1.\n"
+            "      Default is \"%d\".\n"
             "    -e EPSILON\n"
             "      Termination criteria.\n"
             "      Default is \"%lg\".\n"
@@ -70,6 +83,8 @@ void SubUsage() {
             "enabled if N > 0 and testing set is disabled\n"
             "      Default is \"%d\".\n",
             model_filename.c_str(),
+            sample_file_type,
+            hash_dimension,
             eps, l1_c, l2_c, positive_weight,
             bias, testing_portion, nfold);
   } else {
@@ -81,6 +96,14 @@ void SubUsage() {
             "    -m MODEL_FILE\n"
             "      Input model filename.\n"
             "      Default is \"%s\".\n"
+            "    -ft SAMPLE_FILE_TYPE\n"
+            "      Type of SAMPLE_FILE. 0, text; 1, hash text; 2, binary.\n"
+            "      Default is \"%d\".\n"
+            "    -d HASH_DIMENSION\n"
+            "      Feature names in SAMPLE_FILE will be "
+            "hashed into [1, dimension], "
+            "enabled if SAMPLE_FILE_TYPE = 1.\n"
+            "      Default is \"%d\".\n"
             "    -l WITH_LABEL(0 or 1)\n"
             "      Whether SAMPLE_FILE contains labels.\n"
             "      Default is \"%d\".\n"
@@ -88,6 +111,8 @@ void SubUsage() {
             "      Output predict filename, \"-\" denotes stdout.\n"
             "      Default is \"%s\".\n",
             model_filename.c_str(),
+            sample_file_type,
+            hash_dimension,
             with_label,
             predict_filename.c_str());
   }
@@ -107,59 +132,43 @@ void Train(int argc, char** argv) {
     }
 
     if (s == "-o") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       model_filename = argv[i + 1];
       COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-ft") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      sample_file_type = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-d") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      hash_dimension = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-e") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       eps = xatod(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-l1") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       l1_c = xatod(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-l2") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       l2_c = xatod(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-pw") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       positive_weight = xatod(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-b") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       bias = xatod(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-t") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       testing_portion = xatod(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-cv") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       nfold = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else {
@@ -177,8 +186,11 @@ void Train(int argc, char** argv) {
   Problem problem;
   {
     ScopedFile fp(argv[1], ScopedFile::Read);
-    problem.LoadText(fp, bias);
-    //problem.LoadHashText(fp, bias, 1024);
+    if (sample_file_type == 0) {
+      problem.LoadText(fp, bias);
+    } else if (sample_file_type == 1) {
+      problem.LoadHashText(fp, bias, hash_dimension);
+    }
   }
 
   LRModel model;
@@ -271,24 +283,23 @@ void Predict(int argc, char** argv) {
     }
 
     if (s == "-m") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       model_filename = argv[i + 1];
       COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-ft") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      sample_file_type = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-d") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      hash_dimension = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-l") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       with_label = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-o") {
-      if (i + 1 == argc) {
-        MISSING_ARG(argc, argv, i);
-        SubUsage();
-      }
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       predict_filename = argv[i + 1];
       COMSUME_2_ARG(argc, argv, i);
     } else {
@@ -311,7 +322,11 @@ void Predict(int argc, char** argv) {
   {
     ScopedFile fin(argv[1], ScopedFile::Read);
     ScopedFile fout(predict_filename.c_str(), ScopedFile::Write);
-    model.Predict(fin, fout, with_label);
+    if (sample_file_type == 0) {
+      model.PredictText(fin, fout, with_label);
+    } else if (sample_file_type == 1) {
+      model.PredictHashText(fin, fout, with_label, hash_dimension);
+    }
   }
 }
 

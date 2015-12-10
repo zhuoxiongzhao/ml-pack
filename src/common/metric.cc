@@ -4,6 +4,8 @@
 // model performance evaluation metrics
 //
 
+#include <algorithm>
+
 #include "common/metric.h"
 #include "common/x.h"
 

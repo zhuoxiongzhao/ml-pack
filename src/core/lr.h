@@ -85,14 +85,22 @@ class LRModel {
   }
 
  private:
-  static int PredictFeatureNodeProc(
-    double bias,
+  static int PredictTextProc(
     int with_label,
     int sort_x_by_index,
     void* arg,
     double y,
     int sample_max_column,
     FeatureNodeVector* x,
+    int error_flag);
+
+  static int PredictHashTextProc(
+    int with_label,
+    int sort_x_by_index,
+    void* arg,
+    double y,
+    int sample_max_column,
+    FeatureNameNodeVector* x,
     int error_flag);
 
  public:
@@ -108,7 +116,9 @@ class LRModel {
   void UpdateFTRL(const FeatureNode* node);
 
   double Predict(const FeatureNode* node) const;
-  void Predict(FILE* fin, FILE* fout, int with_label) const;
+  void PredictText(FILE* fin, FILE* fout, int with_label) const;
+  void PredictHashText(FILE* fin, FILE* fout,
+                       int with_label, int dimension) const;
 
   void Load(FILE* fp);
   void Save(FILE* fp) const;

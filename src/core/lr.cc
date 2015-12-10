@@ -5,6 +5,7 @@
 #include "core/lr.h"
 #include "blas/blas-decl.h"
 #include "common/line-reader.h"
+#include "hash/hash-entry.h"
 #include "lbfgs/lbfgs.h"
 
 LRModel::LRModel() {
@@ -169,8 +170,7 @@ struct LRModelFout {
   FILE* fout;
 };
 
-int LRModel::PredictFeatureNodeProc(
-  double bias,
+int LRModel::PredictTextProc(
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -180,19 +180,76 @@ int LRModel::PredictFeatureNodeProc(
   int error_flag) {
   const LRModel* model = ((LRModelFout*)arg)->model;
   FILE* fout = ((LRModelFout*)arg)->fout;
+
   if (error_flag == Success) {
+    FeatureNode bias_term;
+    bias_term.index = -1;
+    bias_term.value = (float)model->bias();
+    x->push_back(bias_term);
     fprintf(fout, "%lg", model->Predict(&(*x)[0]));
   }
+
   fprintf(fout, "\n");
   return 0;
 }
 
-void LRModel::Predict(FILE* fin, FILE* fout, int with_label) const {
+void LRModel::PredictText(FILE* fin, FILE* fout, int with_label) const {
   LRModelFout arg;
   arg.model = this;
   arg.fout = fout;
-  ::ForeachFeatureNode(fin, bias_, with_label, 0, &arg,
-                       &PredictFeatureNodeProc);
+  ::ForeachFeatureNode(fin, with_label, 0, &arg, &PredictTextProc);
+}
+
+int LRModel::PredictHashTextProc(
+  int with_label,
+  int sort_x_by_index,
+  void* arg,
+  double y,
+  int sample_max_column,
+  FeatureNameNodeVector* x,
+  int error_flag) {
+  const LRModel* model = ((LRModelFout*)arg)->model;
+  FILE* fout = ((LRModelFout*)arg)->fout;
+
+  if (error_flag == Success) {
+    FeatureNodeVector x2;
+    int size = (int)x->size();
+    for (int i = 0; i < size; i++) {
+      FeatureNode node;
+      const FeatureNameNode& name_node = (*x)[i];
+      if (name_node.name.empty()) {
+        node.index = -1;
+      } else {
+        if (model->bias() > 0.0) {
+          node.index = (unsigned int)HashString(name_node.name)
+                       % (model->columns() - 1) + 1;
+        } else {
+          node.index = (unsigned int)HashString(name_node.name)
+                       % model->columns() + 1;
+        }
+      }
+      node.value = name_node.value;
+      x2.push_back(node);
+    }
+
+    FeatureNode bias_term;
+    bias_term.index = -1;
+    bias_term.value = (float)model->bias();
+    x2.push_back(bias_term);
+
+    fprintf(fout, "%lg", model->Predict(&x2[0]));
+  }
+
+  fprintf(fout, "\n");
+  return 0;
+}
+
+void LRModel::PredictHashText(FILE* fin, FILE* fout,
+                              int with_label, int dimension) const {
+  LRModelFout arg;
+  arg.model = this;
+  arg.fout = fout;
+  ::ForeachFeatureNameNode(fin, with_label, 0, &arg, &PredictHashTextProc);
 }
 
 void LRModel::Load(FILE* fp) {

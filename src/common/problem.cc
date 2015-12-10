@@ -2,13 +2,14 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
+#include <algorithm>
+
 #include "common/problem.h"
 #include "common/line-reader.h"
 #include "hash/hash-entry.h"
 
 void ForeachFeatureNode(
   FILE* fp,
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -26,10 +27,6 @@ void ForeachFeatureNode(
   int sample_max_column;
   FeatureNodeVector x;
   FeatureNode xj;
-
-  if (bias <= 0.0) {
-    bias = 0.0;
-  }
 
   while (line_reader.ReadLine(fp) != NULL) {
     error_flag = Success;
@@ -106,13 +103,8 @@ void ForeachFeatureNode(
       error_flag |= FeatureEmpty;
     }
 
-    // the last term is the bias term with index -1
-    xj.index = -1;
-    xj.value = (float)bias;
-    x.push_back(xj);
-
 callback_label:
-    callback(bias, with_label, sort_x_by_index, arg,
+    callback(with_label, sort_x_by_index, arg,
              y, sample_max_column, &x, error_flag);
     line_no++;
   }
@@ -120,7 +112,6 @@ callback_label:
 
 void ForeachFeatureNameNode(
   FILE* fp,
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -138,10 +129,6 @@ void ForeachFeatureNameNode(
   int sample_max_column;
   FeatureNameNodeVector x;
   FeatureNameNode xj;
-
-  if (bias <= 0.0) {
-    bias = 0.0;
-  }
 
   while (line_reader.ReadLine(fp) != NULL) {
     error_flag = Success;
@@ -204,13 +191,8 @@ void ForeachFeatureNameNode(
       error_flag |= FeatureEmpty;
     }
 
-    // the last term is the bias term with an empty name
-    xj.name.clear();
-    xj.value = (float)bias;
-    x.push_back(xj);
-
 callback_label:
-    callback(bias, with_label, sort_x_by_index, arg,
+    callback(with_label, sort_x_by_index, arg,
              y, sample_max_column, &x, error_flag);
     line_no++;
   }
@@ -240,7 +222,6 @@ void Problem::Clear() {
 }
 
 int Problem::LoadTextProc(
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -256,28 +237,38 @@ int Problem::LoadTextProc(
   if (sample_max_column > problem->columns_) {
     problem->columns_ = sample_max_column;
   }
+
   problem->y_.push_back(y);
-  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size());
+  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size() + 1);
   problem->x_space_->insert(problem->x_space_->end(), x->begin(), x->end());
+
+  FeatureNode bias_term;
+  bias_term.index = -1;
+  bias_term.value = (float)problem->bias();
+  problem->x_space_->push_back(bias_term);
   return 0;
 }
 
 void Problem::LoadText(FILE* fp, double _bias) {
   Clear();
 
+  if (_bias <= 0.0) {
+    _bias = 0.0;
+  }
+
   bias_ = _bias;
   x_index_.push_back(0);
   own_x_space_ = 1;
   x_space_ = new FeatureNodeVector();
-  ForeachFeatureNode(fp, bias_, 1, 1, this, &LoadTextProc);
+  ForeachFeatureNode(fp, 1, 1, this, &LoadTextProc);
   x_index_.pop_back();
   if (bias_ > 0.0) {
     columns_++;
   }
+  Log("Load %d*%d text samples\n", rows(), columns());
 }
 
 int Problem::LoadHashTextProc(
-  double bias,
   int with_label,
   int sort_x_by_index,
   void* arg,
@@ -291,7 +282,7 @@ int Problem::LoadHashTextProc(
 
   Problem* problem = (Problem*)arg;
   problem->y_.push_back(y);
-  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size());
+  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size() + 1);
 
   int size = (int)x->size();
   for (int i = 0; i < size; i++) {
@@ -306,22 +297,32 @@ int Problem::LoadHashTextProc(
     node.value = name_node.value;
     problem->x_space_->push_back(node);
   }
+
+  FeatureNode bias_term;
+  bias_term.index = -1;
+  bias_term.value = (float)problem->bias();
+  problem->x_space_->push_back(bias_term);
   return 0;
 }
 
 void Problem::LoadHashText(FILE* fp, double _bias, int dimension) {
   Clear();
 
+  if (_bias <= 0.0) {
+    _bias = 0.0;
+  }
+
   bias_ = _bias;
   columns_ = dimension;
   x_index_.push_back(0);
   own_x_space_ = 1;
   x_space_ = new FeatureNodeVector();
-  ForeachFeatureNameNode(fp, bias_, 1, 1, this, &LoadHashTextProc);
+  ForeachFeatureNameNode(fp, 1, 1, this, &LoadHashTextProc);
   x_index_.pop_back();
   if (bias_ > 0.0) {
     columns_++;
   }
+  Log("Load %d*%d hash text samples\n", rows(), columns());
 }
 
 void Problem::LoadBinary(FILE* fp) {

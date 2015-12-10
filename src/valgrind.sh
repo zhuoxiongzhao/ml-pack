@@ -9,6 +9,8 @@ if test x$valgrind != "x"; then
     valgrind="$valgrind --tool=memcheck"
 fi
 
+set -e
+
 make
 $valgrind ./lr-test
 
@@ -26,8 +28,14 @@ wc -l pred
 rm pred
 $valgrind ./lr-main predict -m model1 test-data/heart_scale.nolabel.bad -l 0 -o pred
 wc -l pred
-rm pred
-rm model1 model2
+rm model1 model2 pred
+
+$valgrind ./lr-main train test-data/heart_scale -o model -ft 1 -d 1024
+$valgrind ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024
+rm model pred
+$valgrind ./lr-main train test-data/heart_scale -o model -ft 1 -d 1024 -b 0
+$valgrind ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024 -b 0
+rm model pred
 
 $valgrind ./gen-feature-map test-data/samples2 -l 1 -o test-data/samples2.feature-map
 $valgrind ./map-sample -f test-data/samples2.feature-map -l 1 test-data/samples2 -o test-data/samples2.libsvm

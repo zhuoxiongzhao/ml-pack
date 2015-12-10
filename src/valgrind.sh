@@ -43,6 +43,7 @@ $valgrind ./map-sample -f test-data/samples2.feature-map -l 1 test-data/samples2
 $valgrind ./gen-feature-map test-data/samples3 -l 0 -o test-data/samples3.feature-map
 $valgrind ./map-sample -f test-data/samples3.feature-map -l 0 test-data/samples3 -o test-data/samples3.libsvm
 
-./problem-gen-bin test-data/heart_scale
-./problem-load-bin test-data/heart_scale.bin
+$valgrind ./problem-gen-bin test-data/heart_scale
+$valgrind ./problem-load-bin test-data/heart_scale.bin
+
 rm test-data/heart_scale.bin

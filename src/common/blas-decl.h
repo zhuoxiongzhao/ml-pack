@@ -4,8 +4,8 @@
 // BLAS function declaration
 //
 
-#ifndef SRC_BLAS_BLAS_DECL_H_
-#define SRC_BLAS_BLAS_DECL_H_
+#ifndef SRC_COMMON_BLAS_DECL_H_
+#define SRC_COMMON_BLAS_DECL_H_
 
 #if defined __cplusplus
 # define EXTERN extern "C"
@@ -58,5 +58,5 @@ EXTERN void dswap
   const int                  INCY
 );
 
-#endif  // SRC_BLAS_BLAS_DECL_H_
+#endif  // SRC_COMMON_BLAS_DECL_H_
 

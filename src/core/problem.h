@@ -4,8 +4,8 @@
 // features, samples and problem set
 //
 
-#ifndef SRC_COMMON_PROBLEM_H_
-#define SRC_COMMON_PROBLEM_H_
+#ifndef SRC_CORE_PROBLEM_H_
+#define SRC_CORE_PROBLEM_H_
 
 #include <string>
 #include <vector>
@@ -151,4 +151,4 @@ class Problem {
     double testing_portion) const;
 };
 
-#endif  // SRC_COMMON_PROBLEM_H_
+#endif  // SRC_CORE_PROBLEM_H_

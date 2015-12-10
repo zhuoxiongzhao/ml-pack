@@ -286,16 +286,16 @@ int Problem::LoadHashTextProc(
 
   int size = (int)x->size();
   for (int i = 0; i < size; i++) {
-    FeatureNode node;
+    FeatureNode xi;
     const FeatureNameNode& name_node = (*x)[i];
     if (name_node.name.empty()) {
-      node.index = -1;
+      xi.index = -1;
     } else {
-      node.index = (unsigned int)HashString(name_node.name)
-                   % problem->columns() + 1;
+      xi.index = (unsigned int)HashString(name_node.name)
+                 % problem->columns() + 1;
     }
-    node.value = name_node.value;
-    problem->x_space_->push_back(node);
+    xi.value = name_node.value;
+    problem->x_space_->push_back(xi);
   }
 
   FeatureNode bias_term;

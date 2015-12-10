@@ -4,11 +4,11 @@
 // hash function's entry
 //
 
-#ifndef SRC_HASH_HASH_ENTRY_H_
-#define SRC_HASH_HASH_ENTRY_H_
+#ifndef SRC_CORE_HASH_ENTRY_H_
+#define SRC_CORE_HASH_ENTRY_H_
 
 #include <string>
 
 int HashString(const std::string& s);
 
-#endif  // SRC_HASH_HASH_ENTRY_H_
+#endif  // SRC_CORE_HASH_ENTRY_H_

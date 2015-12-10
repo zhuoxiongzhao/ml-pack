@@ -93,9 +93,9 @@ double EvaluateAUC(const std::vector<double>& pred,
   std::sort(indices.begin(), indices.end(), IndicesCompare(&pred[0]));
 
   for (int i = 0; i < size; i++) {
-    if (y[indices[i]] == 1) {
+    if (y[indices[i]] == 1.0) {
       tp++;
-    } else if (y[indices[i]] == -1) {
+    } else {
       auc += tp;
       fp++;
     }

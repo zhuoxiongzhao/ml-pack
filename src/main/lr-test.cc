@@ -20,20 +20,30 @@ int main() {
   }
 
   LRModel model;
-  model.l1_c() = 0.0;
-  model.l2_c() = 1.0;
-  model.TrainLBFGS(problem);
-  model.Save(stdout);
-  model.Clear();
+  //model.l1_c() = 0.0;
+  //model.l2_c() = 1.0;
+  //model.TrainLBFGS(problem);
+  //model.Save(stdout);
+  //model.Clear();
 
-  model.l1_c() = 1.0;
+  //model.l1_c() = 1.0;
+  //model.l2_c() = 0.0;
+  //model.TrainLBFGS(problem);
+  //model.Save(stdout);
+  //model.Clear();
+
+  model.l1_c() = 3.0;
   model.l2_c() = 0.0;
-  model.TrainLBFGS(problem);
+  model.ftrl_alpha() = 0.005;
+  model.ftrl_beta() = 0.1;
+  model.TrainFTRL(problem);
+  model.TrainFTRL(problem);
   model.Save(stdout);
 
   std::vector<double> pred;
   pred.resize(problem.rows());
-  for (int i = 0; i < problem.rows(); i++) {
+  int rows = problem.rows();
+  for (int i = 0; i < rows; i++) {
     pred[i] = model.Predict(problem.x(i));
   }
 

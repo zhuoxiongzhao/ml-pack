@@ -4,8 +4,8 @@
 // line reader
 //
 
-#ifndef SRC_COMMON_LINE_READER_H_
-#define SRC_COMMON_LINE_READER_H_
+#ifndef SRC_CORE_LINE_READER_H_
+#define SRC_CORE_LINE_READER_H_
 
 #include "core/x.h"
 
@@ -42,4 +42,4 @@ struct LineReader {
   }
 };
 
-#endif  // SRC_COMMON_LINE_READER_H_
+#endif  // SRC_CORE_LINE_READER_H_

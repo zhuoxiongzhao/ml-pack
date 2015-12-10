@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
   FeatureMap feature_count_map;
   {
     ScopedFile fp(argv[1], ScopedFile::Read);
-    Log("Processing \"%s\"...\n", argv[i]);
+    Log("Processing \"%s\"...\n", argv[1]);
     Process(fp, &feature_count_map);
     Log("Done.\n\n");
   }

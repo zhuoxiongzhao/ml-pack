@@ -7,6 +7,8 @@
 #ifndef SRC_CORE_LR_H_
 #define SRC_CORE_LR_H_
 
+#include <vector>
+
 #include "core/problem.h"
 
 class LRModel {
@@ -26,7 +28,8 @@ class LRModel {
   // Real model stuffs here, they will be filled by TrainXXX functions.
   double bias_;  // no bias term if <= 0
   int columns_;  // number of features
-  double* w_;  // weights
+  double* w_;  // weights for TrainLBFGS or TrainFTRL
+  double* ftrl_zn_;  // context for TrainFTRL(z,n)
 
  public:
   double& eps() {
@@ -65,23 +68,12 @@ class LRModel {
   double ftrl_beta() const {
     return ftrl_beta_;
   }
-  double& bias() {
-    return bias_;
-  }
+
   double bias() const {
     return bias_;
   }
-  int& columns() {
-    return columns_;
-  }
   int columns() const {
     return columns_;
-  }
-  double* w() {
-    return w_;
-  }
-  const double* w() const {
-    return w_;
   }
 
  private:
@@ -113,9 +105,10 @@ class LRModel {
   void TrainLBFGS(const Problem& problem);
   // TODO(yafei) TrainFTRL, UpdateFTRL
   void TrainFTRL(const Problem& problem);
-  void UpdateFTRL(const FeatureNode* node);
+  void UpdateFTRL(double y, const FeatureNode* x);
 
-  double Predict(const FeatureNode* node) const;
+  double WX(const FeatureNode* x) const;
+  double Predict(const FeatureNode* x) const;
   void PredictText(FILE* fin, FILE* fout, int with_label) const;
   void PredictHashText(FILE* fin, FILE* fout,
                        int with_label, int dimension) const;

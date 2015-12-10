@@ -32,4 +32,4 @@ extern "C" {
 }
 #endif
 
-#endif  /* SRC_COMMON_HASH_FUNCTION_H_ */
+#endif  // SRC_COMMON_HASH_FUNCTION_H_

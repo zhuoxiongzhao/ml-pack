@@ -4,8 +4,8 @@
 // model performance evaluation metrics
 //
 
-#ifndef SRC_COMMON_METRIC_H_
-#define SRC_COMMON_METRIC_H_
+#ifndef SRC_CORE_METRIC_H_
+#define SRC_CORE_METRIC_H_
 
 #include <vector>
 
@@ -24,4 +24,4 @@ void Evaluate(const std::vector<double>& pred,
 double EvaluateAUC(const std::vector<double>& pred,
                    const std::vector<double>& y);
 
-#endif  // SRC_COMMON_METRIC_H_
+#endif  // SRC_CORE_METRIC_H_

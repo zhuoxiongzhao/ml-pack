@@ -18,6 +18,7 @@ LRModel::LRModel() {
   bias_ = 1.0;
   columns_ = 0;
   w_ = NULL;
+  ftrl_zn_ = NULL;
 }
 
 LRModel::~LRModel() {
@@ -36,6 +37,10 @@ void LRModel::Clear() {
   if (w_) {
     vecfree(w_);
     w_ = NULL;
+  }
+  if (ftrl_zn_) {
+    vecfree(ftrl_zn_);
+    ftrl_zn_ = NULL;
   }
 }
 
@@ -154,13 +159,110 @@ void LRModel::TrainLBFGS(const Problem& problem) {
   Log("Optimization terminated with status code = %d.\n\n", ret);
 }
 
-double LRModel::Predict(const FeatureNode* node) const {
+void LRModel::TrainFTRL(const Problem& problem) {
+  bias_ = problem.bias();
+  columns_ = problem.columns();
+  w_ = vecalloc(columns_);
+  ftrl_zn_ = vecalloc(columns_ * 2);
+  // ftrl_zn_[2i + 0] is z[i]
+  // ftrl_zn_[2i + 1] is n[i]
+
+  int rows = problem.rows();
+  for (int i = 0; i < rows; i++) {
+    double y = problem.y(i);
+    const FeatureNode* x = problem.x(i);
+    UpdateFTRL(y, x);
+  }
+}
+
+void LRModel::UpdateFTRL(double y, const FeatureNode* x) {
+  double up, * n, * z;
+  double g, n2, sqrt_n2, sigma;
+  double flag, abs_z, step;
+  int index;
+
+  // up = -y/(1+exp(ywx))
+  if (y == 1.0) {
+    up = -positive_weight_ * sigmoid(-WX(x));
+  } else {
+    up = sigmoid(WX(x));
+  }
+
+  for (; x->index != -1; x++) {
+    index = x->index - 1;
+    n = ftrl_zn_ + 2 * index;
+    z = n + 1;
+
+    // 1. update n & z
+    // g_i = -y/(1+exp(ywx)) * x_i = up * x_i
+    g = up * x->value;
+    n2 = *n + g * g;
+    sqrt_n2 = sqrt(n2);
+    // sigma = (sqrt(n+g^2) - sqrt(n)) / alpha
+    sigma = (sqrt_n2 - sqrt(*n)) / ftrl_alpha_;
+    // z = z + g - sigma*w
+    *z += g - sigma * w_[index];
+    // n = n + g^2
+    *n = n2;
+
+    // 2. update w
+    flag = *z < 0.0 ? -1.0 : 1.0;
+    abs_z = *z * flag;
+    if (abs_z <= l1_c_) {
+      w_[index] = 0.0;
+    } else {
+      step = 1.0 / (l2_c_ + (ftrl_beta_ + sqrt_n2) / ftrl_alpha_);
+      w_[index] = flag * step * (l1_c_ - abs_z);
+    }
+  }
+
+  if (bias_ > 0.0) {
+    index = columns_ - 1;
+    n = ftrl_zn_ + 2 * index;
+    z = n + 1;
+
+    // 1. update n & z
+    // g_i = -y/(1+exp(ywx)) * x_i = up * x_i
+    g = up * bias_;
+    n2 = *n + g * g;
+    sqrt_n2 = sqrt(n2);
+    // sigma = (sqrt(n+g^2) - sqrt(n)) / alpha
+    sigma = (sqrt_n2 - sqrt(*n)) / ftrl_alpha_;
+    // z = z + g - sigma*w
+    *z += g - sigma * w_[index];
+    // n = n + g^2
+    *n = n2;
+
+    // 2. update w
+    flag = *z < 0.0 ? -1.0 : 1.0;
+    abs_z = *z * flag;
+    if (abs_z <= l1_c_) {
+      w_[index] = 0.0;
+    } else {
+      step = 1.0 / (l2_c_ + (ftrl_beta_ + sqrt_n2) / ftrl_alpha_);
+      w_[index] = flag * step * (l1_c_ - abs_z);
+    }
+  }
+}
+
+double LRModel::WX(const FeatureNode* x) const {
   double wx = 0.0;
-  for (; node->index != -1; node++) {
-    wx += w_[node->index - 1] * node->value;
+  for (; x->index != -1; x++) {
+    wx += w_[x->index - 1] * x->value;
   }
   if (bias_ > 0.0) {
-    wx += node->value * w_[columns_ - 1];
+    wx += x->value * w_[columns_ - 1];
+  }
+  return wx;
+}
+
+double LRModel::Predict(const FeatureNode* x) const {
+  double wx = 0.0;
+  for (; x->index != -1; x++) {
+    wx += w_[x->index - 1] * x->value;
+  }
+  if (bias_ > 0.0) {
+    wx += x->value * w_[columns_ - 1];
   }
   return sigmoid(wx);
 }
@@ -215,21 +317,21 @@ int LRModel::PredictHashTextProc(
     FeatureNodeVector x2;
     int size = (int)x->size();
     for (int i = 0; i < size; i++) {
-      FeatureNode node;
+      FeatureNode xi;
       const FeatureNameNode& name_node = (*x)[i];
       if (name_node.name.empty()) {
-        node.index = -1;
+        xi.index = -1;
       } else {
         if (model->bias() > 0.0) {
-          node.index = (unsigned int)HashString(name_node.name)
-                       % (model->columns() - 1) + 1;
+          xi.index = (unsigned int)HashString(name_node.name)
+                     % (model->columns() - 1) + 1;
         } else {
-          node.index = (unsigned int)HashString(name_node.name)
-                       % model->columns() + 1;
+          xi.index = (unsigned int)HashString(name_node.name)
+                     % model->columns() + 1;
         }
       }
-      node.value = name_node.value;
-      x2.push_back(node);
+      xi.value = name_node.value;
+      x2.push_back(xi);
     }
 
     FeatureNode bias_term;

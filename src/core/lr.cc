@@ -2,6 +2,8 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
+#include <string>
+
 #include "core/lr.h"
 #include "core/hash-entry.h"
 #include "core/line-reader.h"
@@ -26,14 +28,6 @@ LRModel::~LRModel() {
 }
 
 void LRModel::Clear() {
-  eps_ = 1e-6;
-  l1_c_ = 0.0;
-  l2_c_ = 0.0;
-  positive_weight_ = 1.0;
-  ftrl_alpha_ = 0.0;
-  ftrl_beta_ = 0.0;
-  bias_ = 1.0;
-  columns_ = 0;
   if (w_) {
     vecfree(w_);
     w_ = NULL;
@@ -49,61 +43,45 @@ struct LossParameter {
   LRModel* model;
 };
 
-static inline double sigmoid(double x) {
-  return 1.0 / (1.0 + exp(-x));
-}
-
 static double LRLoss(
   void* instance,
-  const int _n,
+  const int n,
   const double* w,
   double* g,
   const double step) {
   static const double ZERO = 0.0;
 
   LossParameter* parameter = (LossParameter*)instance;
-  const Problem& problem = *parameter->problem;
+  const Problem* problem = parameter->problem;
   LRModel* model = parameter->model;
 
-  register int i;
-  register int rows = problem.rows();
-  int columns = problem.columns();
-  double bias = problem.bias();
-  register double wx, h, hh;
-  register double fx = 0.0, weighted_rows = 0.0;
-  register const FeatureNode* xi;
-  register double positive_weight = model->positive_weight();
+  int rows = problem->rows();
+  int columns = model->columns();
+  double positive_weight = model->positive_weight();
+  double bias = model->bias();
+  double p, gg;
+  double fx = 0.0, weighted_rows = 0.0;
 
   dcopy(columns, &ZERO, 0, g, 1);
 
-  for (i = 0; i < rows; i++) {
-    // h = sigmoid(w^t * x)
-    wx = 0.0;
-    for (xi = problem.x(i); xi->index != -1; xi++) {
-      wx += xi->value * w[xi->index - 1];
-    }
-    if (bias > 0.0) {
-      wx += xi->value * w[columns - 1];
-    }
-    h = sigmoid(wx);
-
-    // accumulate loss function
-    if (problem.y(i) == 1.0f) {
+  for (int i = 0; i < rows; i++) {
+    p = model->Predict(problem->x(i));
+    if (problem->y(i) == 1.0) {
       weighted_rows += positive_weight;
-      fx -= positive_weight * log(h);
-      hh = positive_weight * (h - 1.0);
+      fx -= positive_weight * log(p);
+      gg = positive_weight * (p - 1.0);
     } else {
       weighted_rows += 1.0;
-      fx -= log(1 - h);
-      hh = h;
+      fx -= log(1 - p);
+      gg = p;
     }
 
     // gradient
-    for (xi = problem.x(i); xi->index != -1; xi++) {
-      g[xi->index - 1] += (hh * xi->value);
+    for (const FeatureNode* xi = problem->x(i); xi->index != -1; xi++) {
+      g[xi->index - 1] += (gg * xi->value);
     }
     if (bias > 0.0) {
-      g[columns - 1] += (hh * xi->value);
+      g[columns - 1] += (gg * bias);
     }
   }
 
@@ -140,6 +118,13 @@ static int LRProgress(
 }
 
 void LRModel::TrainLBFGS(const Problem& problem) {
+  Clear();
+
+  columns_ = problem.columns();
+  if (bias_ > 0.0) {
+    columns_++;
+  }
+
   LossParameter loss_param = {&problem, this};
   lbfgs_parameter_t param;
   lbfgs_default_parameter(&param);
@@ -148,20 +133,23 @@ void LRModel::TrainLBFGS(const Problem& problem) {
     // NOTE
     param.orthantwise_c = l1_c_ / (double)problem.rows();
     param.orthantwise_start = 0;
-    param.orthantwise_end = problem.columns();
+    param.orthantwise_end = columns_;
     param.linesearch = LBFGS_LINESEARCH_BACKTRACKING_WOLFE;
   }
 
-  bias_ = problem.bias();
-  columns_ = problem.columns();
   w_ = vecalloc(columns_);
   int ret = lbfgs(columns_, w_, 0, &LRLoss, &LRProgress, &loss_param, &param);
   Log("Optimization terminated with status code = %d.\n\n", ret);
 }
 
 void LRModel::TrainFTRL(const Problem& problem) {
-  bias_ = problem.bias();
+  Clear();
+
   columns_ = problem.columns();
+  if (bias_ > 0.0) {
+    columns_++;
+  }
+
   w_ = vecalloc(columns_);
   ftrl_zn_ = vecalloc(columns_ * 2);
   // ftrl_zn_[2i + 0] is z[i]
@@ -169,91 +157,79 @@ void LRModel::TrainFTRL(const Problem& problem) {
 
   int rows = problem.rows();
   for (int i = 0; i < rows; i++) {
-    double y = problem.y(i);
-    const FeatureNode* x = problem.x(i);
-    UpdateFTRL(y, x);
+    if (i > 0 && i % 10000 == 0) {
+      Log("Updated %d samples.\n", i);
+    }
+    UpdateFTRL(problem.y(i), problem.x(i));
   }
+  Log("Updated %d samples.\n\n", rows);
 }
 
 void LRModel::UpdateFTRL(double y, const FeatureNode* x) {
-  double up, * n, * z;
-  double g, n2, sqrt_n2, sigma;
-  double flag, abs_z, step;
-  int index;
+  double* ni, sqrt_ni, new_ni, *zi, sign_zi;
+  double p, gg, gi, sigma_i;
+  int i;
 
-  // up = -y/(1+exp(ywx))
-  if (y == 1.0) {
-    up = -positive_weight_ * sigmoid(-WX(x));
-  } else {
-    up = sigmoid(WX(x));
-  }
+  for (int times = 0; times < (int)positive_weight_; times++) {
+    for (const FeatureNode* xi = x; xi->index != -1; xi++) {
+      i = xi->index - 1;
+      ni = ftrl_zn_ + 2 * i;
+      zi = ni + 1;
 
-  for (; x->index != -1; x++) {
-    index = x->index - 1;
-    n = ftrl_zn_ + 2 * index;
-    z = n + 1;
+      sqrt_ni = sqrt(*ni);
+      sign_zi = *zi < 0.0 ? -1.0 : 1.0;
+      if (*zi * sign_zi <= l1_c_) {  // fabs(*zi) <= l1_c_
+        w_[i] = 0.0;
+      } else {
+        w_[i] = (sign_zi * l1_c_ - *zi)
+                / ((ftrl_beta_ + sqrt_ni) / ftrl_alpha_ + l2_c_);
+      }
+    }
+    if (bias_ > 0.0) {
+      i = columns_ - 1;
+      ni = ftrl_zn_ + 2 * i;
+      zi = ni + 1;
 
-    // 1. update n & z
-    // g_i = -y/(1+exp(ywx)) * x_i = up * x_i
-    g = up * x->value;
-    n2 = *n + g * g;
-    sqrt_n2 = sqrt(n2);
-    // sigma = (sqrt(n+g^2) - sqrt(n)) / alpha
-    sigma = (sqrt_n2 - sqrt(*n)) / ftrl_alpha_;
-    // z = z + g - sigma*w
-    *z += g - sigma * w_[index];
-    // n = n + g^2
-    *n = n2;
+      sqrt_ni = sqrt(*ni);
+      sign_zi = *zi < 0.0 ? -1.0 : 1.0;
+      if (*zi * sign_zi <= l1_c_) {  // fabs(*zi) <= l1_c_
+        w_[i] = 0.0;
+      } else {
+        w_[i] = (sign_zi * l1_c_ - *zi)
+                / ((ftrl_beta_ + sqrt_ni) / ftrl_alpha_ + l2_c_);
+      }
+    }
 
-    // 2. update w
-    flag = *z < 0.0 ? -1.0 : 1.0;
-    abs_z = *z * flag;
-    if (abs_z <= l1_c_) {
-      w_[index] = 0.0;
+    p = Predict(x);
+    if (y == 1.0) {
+      gg = p - 1.0;
     } else {
-      step = 1.0 / (l2_c_ + (ftrl_beta_ + sqrt_n2) / ftrl_alpha_);
-      w_[index] = flag * step * (l1_c_ - abs_z);
+      gg = p;
+    }
+
+    for (const FeatureNode* xi = x; xi->index != -1; xi++) {
+      i = xi->index - 1;
+      ni = ftrl_zn_ + 2 * i;
+      zi = ni + 1;
+
+      gi = gg * xi->value;
+      new_ni = *ni + gi * gi;
+      sigma_i = (sqrt(new_ni) - sqrt(*ni)) / ftrl_alpha_;
+      *zi += gi - sigma_i * w_[i];
+      *ni = new_ni;
+    }
+    if (bias_ > 0.0) {
+      i = columns_ - 1;
+      ni = ftrl_zn_ + 2 * i;
+      zi = ni + 1;
+
+      gi = gg * bias_;
+      new_ni = *ni + gi * gi;
+      sigma_i = (sqrt(new_ni) - sqrt(*ni)) / ftrl_alpha_;
+      *zi += gi - sigma_i * w_[i];
+      *ni = new_ni;
     }
   }
-
-  if (bias_ > 0.0) {
-    index = columns_ - 1;
-    n = ftrl_zn_ + 2 * index;
-    z = n + 1;
-
-    // 1. update n & z
-    // g_i = -y/(1+exp(ywx)) * x_i = up * x_i
-    g = up * bias_;
-    n2 = *n + g * g;
-    sqrt_n2 = sqrt(n2);
-    // sigma = (sqrt(n+g^2) - sqrt(n)) / alpha
-    sigma = (sqrt_n2 - sqrt(*n)) / ftrl_alpha_;
-    // z = z + g - sigma*w
-    *z += g - sigma * w_[index];
-    // n = n + g^2
-    *n = n2;
-
-    // 2. update w
-    flag = *z < 0.0 ? -1.0 : 1.0;
-    abs_z = *z * flag;
-    if (abs_z <= l1_c_) {
-      w_[index] = 0.0;
-    } else {
-      step = 1.0 / (l2_c_ + (ftrl_beta_ + sqrt_n2) / ftrl_alpha_);
-      w_[index] = flag * step * (l1_c_ - abs_z);
-    }
-  }
-}
-
-double LRModel::WX(const FeatureNode* x) const {
-  double wx = 0.0;
-  for (; x->index != -1; x++) {
-    wx += w_[x->index - 1] * x->value;
-  }
-  if (bias_ > 0.0) {
-    wx += x->value * w_[columns_ - 1];
-  }
-  return wx;
 }
 
 double LRModel::Predict(const FeatureNode* x) const {
@@ -262,96 +238,58 @@ double LRModel::Predict(const FeatureNode* x) const {
     wx += w_[x->index - 1] * x->value;
   }
   if (bias_ > 0.0) {
-    wx += x->value * w_[columns_ - 1];
+    wx += bias_ * w_[columns_ - 1];
   }
   return sigmoid(wx);
 }
 
-struct LRModelFout {
+struct PredictFileProcArg {
   const LRModel* model;
   FILE* fout;
+  int dimension;
 };
 
-int LRModel::PredictTextProc(
+static void PredictFileProc(
   int with_label,
   int sort_x_by_index,
-  void* arg,
+  void* callback_arg,
   double y,
   int sample_max_column,
   FeatureNodeVector* x,
   int error_flag) {
-  const LRModel* model = ((LRModelFout*)arg)->model;
-  FILE* fout = ((LRModelFout*)arg)->fout;
+  const LRModel* model = ((PredictFileProcArg*)callback_arg)->model;
+  FILE* fout = ((PredictFileProcArg*)callback_arg)->fout;
 
   if (error_flag == Success) {
-    FeatureNode bias_term;
-    bias_term.index = -1;
-    bias_term.value = (float)model->bias();
-    x->push_back(bias_term);
     fprintf(fout, "%lg", model->Predict(&(*x)[0]));
   }
 
   fprintf(fout, "\n");
-  return 0;
 }
 
-void LRModel::PredictText(FILE* fin, FILE* fout, int with_label) const {
-  LRModelFout arg;
-  arg.model = this;
-  arg.fout = fout;
-  ::ForeachFeatureNode(fin, with_label, 0, &arg, &PredictTextProc);
+static void PredictFileHashProc(
+  void* callback_arg,
+  const std::string& name,
+  int* hashed_index) {
+  int dimension = ((PredictFileProcArg*)callback_arg)->dimension;
+  *hashed_index = (unsigned int)HashString(name) % dimension + 1;
 }
 
-int LRModel::PredictHashTextProc(
-  int with_label,
-  int sort_x_by_index,
-  void* arg,
-  double y,
-  int sample_max_column,
-  FeatureNameNodeVector* x,
-  int error_flag) {
-  const LRModel* model = ((LRModelFout*)arg)->model;
-  FILE* fout = ((LRModelFout*)arg)->fout;
-
-  if (error_flag == Success) {
-    FeatureNodeVector x2;
-    int size = (int)x->size();
-    for (int i = 0; i < size; i++) {
-      FeatureNode xi;
-      const FeatureNameNode& name_node = (*x)[i];
-      if (name_node.name.empty()) {
-        xi.index = -1;
-      } else {
-        if (model->bias() > 0.0) {
-          xi.index = (unsigned int)HashString(name_node.name)
-                     % (model->columns() - 1) + 1;
-        } else {
-          xi.index = (unsigned int)HashString(name_node.name)
-                     % model->columns() + 1;
-        }
-      }
-      xi.value = name_node.value;
-      x2.push_back(xi);
-    }
-
-    FeatureNode bias_term;
-    bias_term.index = -1;
-    bias_term.value = (float)model->bias();
-    x2.push_back(bias_term);
-
-    fprintf(fout, "%lg", model->Predict(&x2[0]));
-  }
-
-  fprintf(fout, "\n");
-  return 0;
+void LRModel::PredictFile(FILE* fin, FILE* fout, int with_label) const {
+  PredictFileProcArg callback_arg;
+  callback_arg.model = this;
+  callback_arg.fout = fout;
+  ::ForeachFeatureNode(fin, with_label, 0, &callback_arg, &PredictFileProc);
 }
 
-void LRModel::PredictHashText(FILE* fin, FILE* fout,
+void LRModel::PredictHashFile(FILE* fin, FILE* fout,
                               int with_label, int dimension) const {
-  LRModelFout arg;
-  arg.model = this;
-  arg.fout = fout;
-  ::ForeachFeatureNameNode(fin, with_label, 0, &arg, &PredictHashTextProc);
+  PredictFileProcArg callback_arg;
+  callback_arg.model = this;
+  callback_arg.fout = fout;
+  callback_arg.dimension = dimension;
+  ::ForeachFeatureNode_Hash(fin, with_label, 0, &callback_arg,
+                            &PredictFileProc, &PredictFileHashProc);
 }
 
 void LRModel::Load(FILE* fp) {
@@ -366,12 +304,17 @@ void LRModel::Load(FILE* fp) {
 
   fscanf(fp, "\nweights:\n");
   w_ = vecalloc(columns_);
+
+  char* value;
+  LineReader line_reader;
   for (int i = 0; i < columns_; i++) {
-    fscanf(fp, "%lg\n", &w_[i]);
+    line_reader.ReadLine(fp);
+    value = strtok(line_reader.buf, DELIMITER);
+    w_[i] = xatod(value);
   }
 }
 
-void LRModel::Save(FILE* fp) const {
+void LRModel::Save(FILE* fp, const FeatureReverseMap* fr_map) const {
   fprintf(fp, "eps=%lg\n", eps_);
   fprintf(fp, "l1_c=%lg\n", l1_c_);
   fprintf(fp, "l2_c=%lg\n", l2_c_);
@@ -383,6 +326,17 @@ void LRModel::Save(FILE* fp) const {
 
   fprintf(fp, "\nweights:\n");
   for (int i = 0; i < columns_; i++) {
-    fprintf(fp, "%lg\n", w_[i]);
+    fprintf(fp, "%lg", w_[i]);
+    if (fr_map) {
+      if (i == columns_ - 1) {
+        fprintf(fp, " BIAS");
+      } else {
+        FeatureReverseMapCII ii = fr_map->equal_range(i + 1);
+        for (FeatureReverseMapCI it = ii.first; it != ii.second; ++it) {
+          fprintf(fp, " %s", it->second.c_str());
+        }
+      }
+    }
+    fprintf(fp, "\n");
   }
 }

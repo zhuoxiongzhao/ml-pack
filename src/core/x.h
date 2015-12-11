@@ -71,6 +71,10 @@
 
 #define DELIMITER " \t|\n"
 
+inline double sigmoid(double x) {
+  return 1.0 / (1.0 + exp(-x));
+}
+
 inline FILE* yfopen(const char* filename, const char* mode) {
   FILE* fp = fopen(filename, mode);
   if (fp == NULL) {

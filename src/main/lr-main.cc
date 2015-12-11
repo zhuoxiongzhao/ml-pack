@@ -4,8 +4,6 @@
 // lr train and predict
 //
 
-#include <string>
-
 #include "core/lr.h"
 #include "core/metric.h"
 
@@ -29,6 +27,8 @@ int nfold = 0;
 // predict
 int with_label = 1;
 std::string predict_filename = "-";
+
+// TODO(yafei) integrate ftrl
 
 void Usage() {
   fprintf(stderr,
@@ -184,12 +184,14 @@ void Train(int argc, char** argv) {
   }
 
   Problem problem;
+  FeatureReverseMap* fr_map = NULL;
   {
     ScopedFile fp(argv[1], ScopedFile::Read);
     if (sample_file_type == 0) {
-      problem.LoadText(fp, bias);
+      problem.LoadFile(fp);
     } else if (sample_file_type == 1) {
-      problem.LoadHashText(fp, bias, hash_dimension);
+      fr_map = new FeatureReverseMap();
+      problem.LoadHashFile(fp, hash_dimension, fr_map);
     }
   }
 
@@ -197,6 +199,7 @@ void Train(int argc, char** argv) {
   model.eps() = eps;
   model.l1_c() = l1_c;
   model.l2_c() = l2_c;
+  model.bias() = bias;
   model.positive_weight() = positive_weight;
 
   if (testing_portion > 0.0 && testing_portion < 1.0) {
@@ -212,7 +215,7 @@ void Train(int argc, char** argv) {
     {
       Log("Writing to \"%s\"...\n", model_filename.c_str());
       ScopedFile fp(model_filename.c_str(), ScopedFile::Write);
-      model.Save(fp);
+      model.Save(fp, fr_map);
       Log("Done.\n\n");
     }
 
@@ -243,7 +246,7 @@ void Train(int argc, char** argv) {
       {
         Log("Writing to \"%s\"...\n", model_filename_i.c_str());
         ScopedFile fp(model_filename_i.c_str(), ScopedFile::Write);
-        model.Save(fp);
+        model.Save(fp, fr_map);
         Log("Done.\n\n");
       }
 
@@ -264,9 +267,13 @@ void Train(int argc, char** argv) {
     {
       Log("Writing to \"%s\"...\n", model_filename.c_str());
       ScopedFile fp(model_filename.c_str(), ScopedFile::Write);
-      model.Save(fp);
+      model.Save(fp, fr_map);
       Log("Done.\n\n");
     }
+  }
+
+  if (fr_map) {
+    delete fr_map;
   }
 }
 
@@ -323,9 +330,9 @@ void Predict(int argc, char** argv) {
     ScopedFile fin(argv[1], ScopedFile::Read);
     ScopedFile fout(predict_filename.c_str(), ScopedFile::Write);
     if (sample_file_type == 0) {
-      model.PredictText(fin, fout, with_label);
+      model.PredictFile(fin, fout, with_label);
     } else if (sample_file_type == 1) {
-      model.PredictHashText(fin, fout, with_label, hash_dimension);
+      model.PredictHashFile(fin, fout, with_label, hash_dimension);
     }
   }
 }

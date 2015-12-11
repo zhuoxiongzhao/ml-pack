@@ -7,8 +7,6 @@
 #ifndef SRC_CORE_LR_H_
 #define SRC_CORE_LR_H_
 
-#include <vector>
-
 #include "core/problem.h"
 
 class LRModel {
@@ -20,16 +18,16 @@ class LRModel {
   // weights of all positive samples,
   // while weights of negative samples are all 1.0.
   double positive_weight_;
+  double bias_;  // no bias term if <= 0
 
   // Parameters used in only FTRL mode(TrainFTRL).
   double ftrl_alpha_;
   double ftrl_beta_;
 
   // Real model stuffs here, they will be filled by TrainXXX functions.
-  double bias_;  // no bias term if <= 0
-  int columns_;  // number of features
+  int columns_;  // number of features including the bias term
   double* w_;  // weights for TrainLBFGS or TrainFTRL
-  double* ftrl_zn_;  // context for TrainFTRL(z,n)
+  double* ftrl_zn_;  // context only for TrainFTRL
 
  public:
   double& eps() {
@@ -56,6 +54,12 @@ class LRModel {
   double positive_weight() const {
     return positive_weight_;
   }
+  double& bias() {
+    return bias_;
+  }
+  double bias() const {
+    return bias_;
+  }
   double& ftrl_alpha() {
     return ftrl_alpha_;
   }
@@ -69,52 +73,33 @@ class LRModel {
     return ftrl_beta_;
   }
 
-  double bias() const {
-    return bias_;
-  }
   int columns() const {
     return columns_;
   }
 
- private:
-  static int PredictTextProc(
-    int with_label,
-    int sort_x_by_index,
-    void* arg,
-    double y,
-    int sample_max_column,
-    FeatureNodeVector* x,
-    int error_flag);
-
-  static int PredictHashTextProc(
-    int with_label,
-    int sort_x_by_index,
-    void* arg,
-    double y,
-    int sample_max_column,
-    FeatureNameNodeVector* x,
-    int error_flag);
-
  public:
   LRModel();
   ~LRModel();
+
+  // Only clear model stuffs, won't reset parameters.
   void Clear();
 
   // L1: LBFGS + OWLQN
   // L2: LBFGS
   void TrainLBFGS(const Problem& problem);
-  // TODO(yafei) TrainFTRL, UpdateFTRL
+  // FTRL
   void TrainFTRL(const Problem& problem);
   void UpdateFTRL(double y, const FeatureNode* x);
 
-  double WX(const FeatureNode* x) const;
   double Predict(const FeatureNode* x) const;
-  void PredictText(FILE* fin, FILE* fout, int with_label) const;
-  void PredictHashText(FILE* fin, FILE* fout,
-                       int with_label, int dimension) const;
+  void PredictFile(FILE* fin, FILE* fout, int with_label) const;
+  void PredictHashFile(FILE* fin,
+                       FILE* fout,
+                       int with_label,
+                       int dimension) const;
 
   void Load(FILE* fp);
-  void Save(FILE* fp) const;
+  void Save(FILE* fp, const FeatureReverseMap* fr_map = NULL) const;
 };
 
 #endif  // SRC_CORE_LR_H_

@@ -7,7 +7,9 @@
 #ifndef SRC_CORE_PROBLEM_H_
 #define SRC_CORE_PROBLEM_H_
 
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "core/x.h"
@@ -25,85 +27,78 @@ struct FeatureNodeLess {
 
 typedef std::vector<FeatureNode> FeatureNodeVector;
 
-struct FeatureNameNode {
-  std::string name;
-  float value;
-};
+typedef std::map<std::string, int> FeatureMap;
+typedef FeatureMap::const_iterator FeatureMapCI;
 
-typedef std::vector<FeatureNameNode> FeatureNameNodeVector;
+typedef std::multimap<int, std::string> FeatureReverseMap;
+typedef FeatureReverseMap::const_iterator FeatureReverseMapCI;
+typedef std::pair <FeatureReverseMap::const_iterator,
+        FeatureReverseMap::const_iterator> FeatureReverseMapCII;
 
-enum ErrorFlag {
+void FeatureMapToFeatureReverseMap(
+  const FeatureMap& feature_map,
+  FeatureReverseMap* fr_map);
+
+enum FeatureNodeErrorFlag {
   Success = 0,
   LineEmpty = 1,
   LabelError = 2,
   FeatureEmpty = 4,
 };
 
-typedef int (* FeatureNodeProc)(
+typedef void (* FeatureNodeProc)(
   int with_label,
   int sort_x_by_index,
-  void* arg,
+  void* callback_arg,
   double y,
   int sample_max_column,
   FeatureNodeVector* x,
   int error_flag);
 
+typedef void (* FeatureNodeHashProc)(
+  void* callback_arg,
+  const std::string& name,
+  int* hashed_index);
+
 void ForeachFeatureNode(
   FILE* fp,
   int with_label,
   int sort_x_by_index,
-  void* arg,
+  void* callback_arg,
   FeatureNodeProc callback);
 
-typedef int (* FeatureNameNodeProc)(
-  int with_label,
-  int sort_x_by_index,
-  void* arg,
-  double y,
-  int sample_max_column,
-  FeatureNameNodeVector* x,
-  int error_flag);
-
-void ForeachFeatureNameNode(
+void ForeachFeatureNode_Hash(
   FILE* fp,
   int with_label,
   int sort_x_by_index,
-  void* arg,
-  FeatureNameNodeProc callback);
+  void* callback_arg,
+  FeatureNodeProc callback,
+  FeatureNodeHashProc hasher);
 
 class Problem {
  private:
-  double bias_;  // no bias term if <= 0
-  int columns_;  // number of features including the bias term
+  int columns_;  // number of features
   std::vector<double> y_;
   std::vector<int> x_index_;
   int own_x_space_;
   FeatureNodeVector* x_space_;
 
  private:
-  static int LoadTextProc(
+  static void LoadFileProc(
     int with_label,
     int sort_x_by_index,
-    void* arg,
+    void* callback_arg,
     double y,
     int sample_max_column,
     FeatureNodeVector* x,
     int error_flag);
 
-  static int LoadHashTextProc(
-    int with_label,
-    int sort_x_by_index,
-    void* arg,
-    double y,
-    int sample_max_column,
-    FeatureNameNodeVector* x,
-    int error_flag);
+  static void LoadFileHashProc(
+    void* callback_arg,
+    const std::string& name,
+    int* hashed_index);
 
  public:
-  double bias() const {
-    return bias_;
-  }
-
   int columns() const {
     return columns_;
   }
@@ -131,10 +126,14 @@ class Problem {
 
   // format: label index:value[ index:value]
   // indices start from 1.
-  void LoadText(FILE* fp, double _bias);
+  void LoadFile(FILE* fp);
   // format label name:value[ name:value]
-  // names are hashed into [1, dimension].
-  void LoadHashText(FILE* fp, double _bias, int dimension);
+  // feature names are hashed into [1, dimension].
+  // "fr_map" is optional.
+  void LoadHashFile(
+    FILE* fp,
+    int dimension,
+    FeatureReverseMap* fr_map);
 
   void LoadBinary(FILE* fp);
   void SaveBinary(FILE* fp) const;

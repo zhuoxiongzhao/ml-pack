@@ -8,11 +8,22 @@
 #include "core/line-reader.h"
 #include "core/hash-entry.h"
 
+void FeatureMapToFeatureReverseMap(
+  const FeatureMap& feature_map,
+  FeatureReverseMap* fr_map) {
+  fr_map->clear();
+  FeatureMapCI it = feature_map.begin();
+  FeatureMapCI last = feature_map.end();
+  for (; it != last; ++it) {
+    fr_map->insert(std::make_pair(it->second, it->first));
+  }
+}
+
 void ForeachFeatureNode(
   FILE* fp,
   int with_label,
   int sort_x_by_index,
-  void* arg,
+  void* callback_arg,
   FeatureNodeProc callback) {
   LineReader line_reader;
   int line_no = 1;
@@ -101,21 +112,27 @@ void ForeachFeatureNode(
     }
     if (x.empty()) {
       error_flag |= FeatureEmpty;
+    } else {
+      FeatureNode sentinel;
+      sentinel.index = -1;
+      sentinel.value = 0.0f;
+      x.push_back(sentinel);
     }
 
 callback_label:
-    callback(with_label, sort_x_by_index, arg,
+    callback(with_label, sort_x_by_index, callback_arg,
              y, sample_max_column, &x, error_flag);
     line_no++;
   }
 }
 
-void ForeachFeatureNameNode(
+void ForeachFeatureNode_Hash(
   FILE* fp,
   int with_label,
   int sort_x_by_index,
-  void* arg,
-  FeatureNameNodeProc callback) {
+  void* callback_arg,
+  FeatureNodeProc callback,
+  FeatureNodeHashProc hasher) {
   LineReader line_reader;
   int line_no = 1;
   char* endptr;
@@ -127,12 +144,12 @@ void ForeachFeatureNameNode(
   int feature_error_flag;
   double y;
   int sample_max_column;
-  FeatureNameNodeVector x;
-  FeatureNameNode xj;
+  FeatureNodeVector x;
+  FeatureNode xj;
 
+  feature_error_flag = 0;
   while (line_reader.ReadLine(fp) != NULL) {
     error_flag = Success;
-    feature_error_flag = 0;
     sample_max_column = 0;
     y = 0.0;
     x.clear();
@@ -180,26 +197,32 @@ void ForeachFeatureNameNode(
         xj.value = 1.0f;
       }
 
-      xj.name = index;
-
       if (feature_error_flag == 0) {
+        hasher(callback_arg, index, &xj.index);
         x.push_back(xj);
       }
     }
 
+    if (sort_x_by_index) {
+      std::sort(x.begin(), x.end(), FeatureNodeLess());
+    }
     if (x.empty()) {
       error_flag |= FeatureEmpty;
+    } else {
+      FeatureNode sentinel;
+      sentinel.index = -1;
+      sentinel.value = 0.0f;
+      x.push_back(sentinel);
     }
 
 callback_label:
-    callback(with_label, sort_x_by_index, arg,
+    callback(with_label, sort_x_by_index, callback_arg,
              y, sample_max_column, &x, error_flag);
     line_no++;
   }
 }
 
 Problem::Problem() {
-  bias_ = 1.0;
   columns_ = 0;
   own_x_space_ = 0;
   x_space_ = NULL;
@@ -210,118 +233,97 @@ Problem::~Problem() {
 }
 
 void Problem::Clear() {
-  bias_ = 1.0;
   columns_ = 0;
   y_.clear();
   x_index_.clear();
   if (own_x_space_) {
     delete x_space_;
+    own_x_space_ = 0;
   }
-  own_x_space_ = 0;
   x_space_ = NULL;
 }
 
-int Problem::LoadTextProc(
+struct LoadFileProcArg {
+  Problem* problem;
+  FeatureMap* feature_map;
+};
+
+void Problem::LoadFileProc(
   int with_label,
   int sort_x_by_index,
-  void* arg,
+  void* callback_arg,
   double y,
   int sample_max_column,
   FeatureNodeVector* x,
   int error_flag) {
   if (error_flag) {
-    return error_flag;
+    return;
   }
 
-  Problem* problem = (Problem*)arg;
+  Problem* problem = ((LoadFileProcArg*)callback_arg)->problem;
   if (sample_max_column > problem->columns_) {
     problem->columns_ = sample_max_column;
   }
 
   problem->y_.push_back(y);
-  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size() + 1);
+  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size());
   problem->x_space_->insert(problem->x_space_->end(), x->begin(), x->end());
-
-  FeatureNode bias_term;
-  bias_term.index = -1;
-  bias_term.value = (float)problem->bias();
-  problem->x_space_->push_back(bias_term);
-  return 0;
 }
 
-void Problem::LoadText(FILE* fp, double _bias) {
+void Problem::LoadFileHashProc(
+  void* callback_arg,
+  const std::string& name,
+  int* hashed_index) {
+  Problem* problem = ((LoadFileProcArg*)callback_arg)->problem;
+  FeatureMap* feature_map = ((LoadFileProcArg*)callback_arg)->feature_map;
+  *hashed_index = (unsigned int)HashString(name) % problem->columns() + 1;
+  if (feature_map) {
+    feature_map->insert(std::make_pair(name, *hashed_index));
+  }
+}
+
+void Problem::LoadFile(FILE* fp) {
   Clear();
 
-  if (_bias <= 0.0) {
-    _bias = 0.0;
-  }
+  LoadFileProcArg callback_arg;
+  callback_arg.problem = this;
+  callback_arg.feature_map = NULL;
 
-  bias_ = _bias;
   x_index_.push_back(0);
   own_x_space_ = 1;
   x_space_ = new FeatureNodeVector();
-  ForeachFeatureNode(fp, 1, 1, this, &LoadTextProc);
+  ForeachFeatureNode(fp, 1, 1, &callback_arg, &LoadFileProc);
   x_index_.pop_back();
-  if (bias_ > 0.0) {
-    columns_++;
-  }
   Log("Load %d*%d text samples\n", rows(), columns());
 }
 
-int Problem::LoadHashTextProc(
-  int with_label,
-  int sort_x_by_index,
-  void* arg,
-  double y,
-  int sample_max_column,
-  FeatureNameNodeVector* x,
-  int error_flag) {
-  if (error_flag) {
-    return error_flag;
-  }
-
-  Problem* problem = (Problem*)arg;
-  problem->y_.push_back(y);
-  problem->x_index_.push_back(problem->x_index_.back() + (int)x->size() + 1);
-
-  int size = (int)x->size();
-  for (int i = 0; i < size; i++) {
-    FeatureNode xi;
-    const FeatureNameNode& name_node = (*x)[i];
-    if (name_node.name.empty()) {
-      xi.index = -1;
-    } else {
-      xi.index = (unsigned int)HashString(name_node.name)
-                 % problem->columns() + 1;
-    }
-    xi.value = name_node.value;
-    problem->x_space_->push_back(xi);
-  }
-
-  FeatureNode bias_term;
-  bias_term.index = -1;
-  bias_term.value = (float)problem->bias();
-  problem->x_space_->push_back(bias_term);
-  return 0;
-}
-
-void Problem::LoadHashText(FILE* fp, double _bias, int dimension) {
+void Problem::LoadHashFile(
+  FILE* fp,
+  int dimension,
+  FeatureReverseMap* fr_map) {
   Clear();
 
-  if (_bias <= 0.0) {
-    _bias = 0.0;
+  FeatureMap* feature_map = NULL;
+  if (fr_map) {
+    feature_map = new FeatureMap();
   }
+  LoadFileProcArg callback_arg;
+  callback_arg.problem = this;
+  callback_arg.feature_map = feature_map;
 
-  bias_ = _bias;
   columns_ = dimension;
   x_index_.push_back(0);
   own_x_space_ = 1;
   x_space_ = new FeatureNodeVector();
-  ForeachFeatureNameNode(fp, 1, 1, this, &LoadHashTextProc);
+  ForeachFeatureNode_Hash(fp, 1, 1, &callback_arg,
+                          &LoadFileProc, &LoadFileHashProc);
   x_index_.pop_back();
-  if (bias_ > 0.0) {
-    columns_++;
+
+  if (fr_map) {
+    FeatureMapToFeatureReverseMap(*feature_map, fr_map);
+    delete feature_map;
   }
+
   Log("Load %d*%d hash text samples\n", rows(), columns());
 }
 
@@ -330,7 +332,6 @@ void Problem::LoadBinary(FILE* fp) {
 
   int _rows;
   int x_space_size;
-  xfread(&bias_, sizeof(bias_), 1, fp);
   xfread(&_rows, sizeof(_rows), 1, fp);
   xfread(&columns_, sizeof(columns_), 1, fp);
   xfread(&x_space_size, sizeof(x_space_size), 1, fp);
@@ -355,7 +356,6 @@ void Problem::LoadBinary(FILE* fp) {
 void Problem::SaveBinary(FILE* fp) const {
   int _rows = rows();
   int x_space_size = (int)x_space_->size();
-  xfwrite(&bias_, sizeof(bias_), 1, fp);
   xfwrite(&_rows, sizeof(_rows), 1, fp);
   xfwrite(&columns_, sizeof(columns_), 1, fp);
   xfwrite(&x_space_size, sizeof(x_space_size), 1, fp);
@@ -384,7 +384,6 @@ void Problem::GenerateNFold(
 
     training = nfold_training + i;
     training->Clear();
-    training->bias_ = bias_;
     training->columns_ = columns_;
     training->y_.reserve(training_rows);
     training->x_index_.reserve(training_rows);
@@ -393,7 +392,6 @@ void Problem::GenerateNFold(
 
     testing = nfold_testing + i;
     testing->Clear();
-    testing->bias_ = bias_;
     testing->columns_ = columns_;
     testing->y_.reserve(testing_rows);
     testing->x_index_.reserve(testing_rows);
@@ -425,7 +423,6 @@ void Problem::GenerateTrainingTesting(
   int k = 0;
 
   training->Clear();
-  training->bias_ = bias_;
   training->columns_ = columns_;
   training->y_.reserve(training_rows);
   training->x_index_.reserve(training_rows);
@@ -438,7 +435,6 @@ void Problem::GenerateTrainingTesting(
   }
 
   testing->Clear();
-  testing->bias_ = bias_;
   testing->columns_ = columns_;
   testing->y_.reserve(testing_rows);
   testing->x_index_.reserve(testing_rows);

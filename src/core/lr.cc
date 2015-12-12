@@ -15,8 +15,9 @@ LRModel::LRModel() {
   l1_c_ = 0.0;
   l2_c_ = 0.0;
   positive_weight_ = 1.0;
-  ftrl_alpha_ = 0.0;
-  ftrl_beta_ = 0.0;
+  ftrl_alpha_ = 0.001;
+  ftrl_beta_ = 1.0;
+  ftrl_round_ = 1;
   bias_ = 1.0;
   columns_ = 0;
   w_ = NULL;
@@ -28,6 +29,7 @@ LRModel::~LRModel() {
 }
 
 void LRModel::Clear() {
+  columns_ = 0;
   if (w_) {
     vecfree(w_);
     w_ = NULL;
@@ -130,7 +132,6 @@ void LRModel::TrainLBFGS(const Problem& problem) {
   lbfgs_default_parameter(&param);
   param.epsilon = eps_;
   if (l1_c_ != 0.0) {
-    // NOTE
     param.orthantwise_c = l1_c_ / (double)problem.rows();
     param.orthantwise_start = 0;
     param.orthantwise_end = columns_;
@@ -143,17 +144,20 @@ void LRModel::TrainLBFGS(const Problem& problem) {
 }
 
 void LRModel::TrainFTRL(const Problem& problem) {
-  Clear();
+  // Don't clear previous context
+  if (ftrl_zn_ == NULL) {
+    Clear();
 
-  columns_ = problem.columns();
-  if (bias_ > 0.0) {
-    columns_++;
+    columns_ = problem.columns();
+    if (bias_ > 0.0) {
+      columns_++;
+    }
+
+    w_ = vecalloc(columns_);
+    ftrl_zn_ = vecalloc(columns_ * 2);
+    // ftrl_zn_[2i + 0] is z[i]
+    // ftrl_zn_[2i + 1] is n[i]
   }
-
-  w_ = vecalloc(columns_);
-  ftrl_zn_ = vecalloc(columns_ * 2);
-  // ftrl_zn_[2i + 0] is z[i]
-  // ftrl_zn_[2i + 1] is n[i]
 
   int rows = problem.rows();
   for (int i = 0; i < rows; i++) {
@@ -162,7 +166,7 @@ void LRModel::TrainFTRL(const Problem& problem) {
     }
     UpdateFTRL(problem.y(i), problem.x(i));
   }
-  Log("Updated %d samples.\n\n", rows);
+  Log("Updated %d samples.\n", rows);
 }
 
 void LRModel::UpdateFTRL(double y, const FeatureNode* x) {
@@ -232,6 +236,16 @@ void LRModel::UpdateFTRL(double y, const FeatureNode* x) {
   }
 }
 
+void LRModel::Train(const Problem& problem, int mode) {
+  if (mode == 0) {
+    TrainLBFGS(problem);
+  } else {
+    for (int r = 0; r < ftrl_round_; r++) {
+      TrainFTRL(problem);
+    }
+  }
+}
+
 double LRModel::Predict(const FeatureNode* x) const {
   double wx = 0.0;
   for (; x->index != -1; x++) {
@@ -276,18 +290,13 @@ static void PredictFileHashProc(
 }
 
 void LRModel::PredictFile(FILE* fin, FILE* fout, int with_label) const {
-  PredictFileProcArg callback_arg;
-  callback_arg.model = this;
-  callback_arg.fout = fout;
+  PredictFileProcArg callback_arg = {this, fout, 0};
   ::ForeachFeatureNode(fin, with_label, 0, &callback_arg, &PredictFileProc);
 }
 
 void LRModel::PredictHashFile(FILE* fin, FILE* fout,
                               int with_label, int dimension) const {
-  PredictFileProcArg callback_arg;
-  callback_arg.model = this;
-  callback_arg.fout = fout;
-  callback_arg.dimension = dimension;
+  PredictFileProcArg callback_arg = {this, fout, dimension};
   ::ForeachFeatureNode_Hash(fin, with_label, 0, &callback_arg,
                             &PredictFileProc, &PredictFileHashProc);
 }
@@ -299,6 +308,7 @@ void LRModel::Load(FILE* fp) {
   fscanf(fp, "positive_weight=%lg\n", &positive_weight_);
   fscanf(fp, "ftrl_alpha=%lg\n", &ftrl_alpha_);
   fscanf(fp, "ftrl_beta=%lg\n", &ftrl_beta_);
+  fscanf(fp, "ftrl_round=%d\n", &ftrl_round_);
   fscanf(fp, "bias=%lg\n", &bias_);
   fscanf(fp, "columns=%d\n", &columns_);
 
@@ -321,6 +331,7 @@ void LRModel::Save(FILE* fp, const FeatureReverseMap* fr_map) const {
   fprintf(fp, "positive_weight=%lg\n", positive_weight_);
   fprintf(fp, "ftrl_alpha=%lg\n", ftrl_alpha_);
   fprintf(fp, "ftrl_beta=%lg\n", ftrl_beta_);
+  fprintf(fp, "ftrl_round=%d\n", ftrl_round_);
   fprintf(fp, "bias=%lg\n", bias_);
   fprintf(fp, "columns=%d\n", columns_);
 
@@ -329,11 +340,11 @@ void LRModel::Save(FILE* fp, const FeatureReverseMap* fr_map) const {
     fprintf(fp, "%lg", w_[i]);
     if (fr_map) {
       if (i == columns_ - 1) {
-        fprintf(fp, " BIAS");
+        fprintf(fp, "\tBIAS");
       } else {
         FeatureReverseMapCII ii = fr_map->equal_range(i + 1);
         for (FeatureReverseMapCI it = ii.first; it != ii.second; ++it) {
-          fprintf(fp, " %s", it->second.c_str());
+          fprintf(fp, "\t%s", it->second.c_str());
         }
       }
     }

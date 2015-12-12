@@ -7,28 +7,27 @@
 #include "core/lr.h"
 #include "core/metric.h"
 
-// 0, train
-// 1, predict
 int action = 0;
-// train
 std::string model_filename = "model";
-// 0, text
-// 1, hash text
-// 2, binary
 int sample_file_type = 0;
 int hash_dimension = 0;
+
+// train
+int train_mode = 0;
 double eps = 1e-6;
 double l1_c = 1.0;
 double l2_c = 0.0;
 double positive_weight = 1.0;
 double bias = 1.0;
+double ftrl_alpha = 0.001;
+double ftrl_beta = 1.0;
+int ftrl_round = 1;
 double testing_portion = 0.0;
 int nfold = 0;
+
 // predict
 int with_label = 1;
 std::string predict_filename = "-";
-
-// TODO(yafei) integrate ftrl
 
 void Usage() {
   fprintf(stderr,
@@ -52,12 +51,15 @@ void SubUsage() {
             "      Output model filename.\n"
             "      Default is \"%s\".\n"
             "    -ft SAMPLE_FILE_TYPE\n"
-            "      Type of SAMPLE_FILE. 0, text; 1, hash text; 2, binary.\n"
+            "      Type of SAMPLE_FILE. 0, text; 1, hash text.\n"
             "      Default is \"%d\".\n"
             "    -d HASH_DIMENSION\n"
             "      Feature names in SAMPLE_FILE will be "
             "hashed into [1, dimension], "
             "enabled if SAMPLE_FILE_TYPE = 1.\n"
+            "      Default is \"%d\".\n"
+            "    -tm TRAIN_MODE\n"
+            "      Train mode. 0, LBFGS; 1, FTRL.\n"
             "      Default is \"%d\".\n"
             "    -e EPSILON\n"
             "      Termination criteria.\n"
@@ -74,6 +76,15 @@ void SubUsage() {
             "    -b BIAS\n"
             "      Value of the bias term(no bias term if BIAS <= 0).\n"
             "      Default is \"%lg\".\n"
+            "    -ftrl_alpha FTRL_ALPHA\n"
+            "      Enabled if TRAIN_MODE = 1.\n"
+            "      Default is \"%lg\".\n"
+            "    -ftrl_beta FTRL_BETA\n"
+            "      Enabled if TRAIN_MODE = 1.\n"
+            "      Default is \"%lg\".\n"
+            "    -ftrl_round FTRL_ROUND\n"
+            "      Enabled if TRAIN_MODE = 1.\n"
+            "      Default is \"%d\".\n"
             "    -t TESTING_PORTION\n"
             "      Portion of testing set, "
             "enabled if 0 < TESTING_PORTION < 1.\n"
@@ -85,8 +96,16 @@ void SubUsage() {
             model_filename.c_str(),
             sample_file_type,
             hash_dimension,
-            eps, l1_c, l2_c, positive_weight,
-            bias, testing_portion, nfold);
+            train_mode,
+            eps,
+            l1_c,
+            l2_c,
+            positive_weight,
+            bias,
+            ftrl_alpha,
+            ftrl_beta,
+            ftrl_round,
+            testing_portion, nfold);
   } else {
     fprintf(stderr,
             "Usage: lr-main predict [options] SAMPLE_FILE\n"
@@ -143,6 +162,10 @@ void Train(int argc, char** argv) {
       CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       hash_dimension = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-tm") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      train_mode = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-e") {
       CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       eps = xatod(argv[i + 1]);
@@ -162,6 +185,18 @@ void Train(int argc, char** argv) {
     } else if (s == "-b") {
       CHECK_MISSING_ARG(argc, argv, i, SubUsage());
       bias = xatod(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-ftrl_alpha") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      ftrl_alpha = xatod(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-ftrl_beta") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      ftrl_beta = xatod(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-ftrl_round") {
+      CHECK_MISSING_ARG(argc, argv, i, SubUsage());
+      ftrl_round = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-t") {
       CHECK_MISSING_ARG(argc, argv, i, SubUsage());
@@ -200,6 +235,9 @@ void Train(int argc, char** argv) {
   model.l1_c() = l1_c;
   model.l2_c() = l2_c;
   model.bias() = bias;
+  model.ftrl_alpha() = ftrl_alpha;
+  model.ftrl_beta() = ftrl_beta;
+  model.ftrl_round() = ftrl_round;
   model.positive_weight() = positive_weight;
 
   if (testing_portion > 0.0 && testing_portion < 1.0) {
@@ -211,7 +249,7 @@ void Train(int argc, char** argv) {
     Log("%d samples are used to test.\n", testing.rows());
     Log("Done.\n\n");
 
-    model.TrainLBFGS(training);
+    model.Train(training, train_mode);
     {
       Log("Writing to \"%s\"...\n", model_filename.c_str());
       ScopedFile fp(model_filename.c_str(), ScopedFile::Write);
@@ -242,7 +280,7 @@ void Train(int argc, char** argv) {
       snprintf(buf, sizeof(buf), "%d", i);
       std::string model_filename_i = model_filename + buf;
 
-      model.TrainLBFGS(nfold_training[i]);
+      model.Train(nfold_training[i], train_mode);
       {
         Log("Writing to \"%s\"...\n", model_filename_i.c_str());
         ScopedFile fp(model_filename_i.c_str(), ScopedFile::Write);
@@ -263,7 +301,7 @@ void Train(int argc, char** argv) {
     delete [] nfold_training;
     delete [] nfold_testing;
   } else {
-    model.TrainLBFGS(problem);
+    model.Train(problem, train_mode);
     {
       Log("Writing to \"%s\"...\n", model_filename.c_str());
       ScopedFile fp(model_filename.c_str(), ScopedFile::Write);

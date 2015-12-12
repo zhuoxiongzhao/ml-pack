@@ -3,8 +3,9 @@ eps=1e-006
 l1_c=0
 l2_c=1
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -27,8 +28,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -53,31 +55,33 @@ l2_c=1
 positive_weight=1
 ftrl_alpha=0.01
 ftrl_beta=0.1
+ftrl_round=1
 bias=1
 columns=14
 
 weights:
-0.0261581
-0.0583875
-0.0576036
-0.0301333
-0.0173876
-0.00491628
-0.0380973
--0.0777597
-0.0841553
-0.0595849
-0.0750445
-0.0989819
-0.123219
--0.0131606
+0.0641004
+0.109943
+0.122642
+0.0542922
+0.030051
+0
+0.0723893
+-0.148388
+0.153562
+0.0990207
+0.127293
+0.16984
+0.218078
+-0.0135538
 running ./lr-main train test-data/heart_scale.unordered
 eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -101,8 +105,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -1210,8 +1215,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=1025
 
@@ -1420,8 +1426,8 @@ weights:
 0
 0
 0
-1.42743 12
-0.974987 3
+1.42743	12
+0.974987	3
 0
 0
 0
@@ -1543,7 +1549,7 @@ weights:
 0
 0
 0
-0.454886 5
+0.454886	5
 0
 0
 0
@@ -1579,7 +1585,7 @@ weights:
 0
 0
 0
-0.586118 2
+0.586118	2
 0
 0
 0
@@ -1598,7 +1604,7 @@ weights:
 0
 0
 0
-0.690501 13
+0.690501	13
 0
 0
 0
@@ -1631,7 +1637,7 @@ weights:
 0
 0
 0
--0.833452 8
+-0.833452	8
 0
 0
 0
@@ -1806,7 +1812,7 @@ weights:
 0
 0
 0
-0.392333 9
+0.392333	9
 0
 0
 0
@@ -1835,7 +1841,7 @@ weights:
 0
 0
 0
--0.312477 6
+-0.312477	6
 0
 0
 0
@@ -1878,7 +1884,7 @@ weights:
 0
 0
 0
-0.722759 10
+0.722759	10
 0
 0
 0
@@ -1965,7 +1971,7 @@ weights:
 0
 0
 0
-0.790562 4
+0.790562	4
 0
 0
 0
@@ -2121,7 +2127,7 @@ weights:
 0
 0
 0
-0.413449 11
+0.413449	11
 0
 0
 0
@@ -2157,7 +2163,7 @@ weights:
 0
 0
 0
-0 1
+0	1
 0
 0
 0
@@ -2167,7 +2173,7 @@ weights:
 0
 0
 0
-0.305477 7
+0.305477	7
 0
 0
 0
@@ -2240,7 +2246,7 @@ weights:
 0
 0
 0
-1.10114 BIAS
+1.10114	BIAS
 running ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024
 0.970976
 0.415209
@@ -2517,8 +2523,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=0
 columns=1024
 
@@ -2727,8 +2734,8 @@ weights:
 0
 0
 0
-1.24894 12
-1.1426 3
+1.24894	12
+1.1426	3
 0
 0
 0
@@ -2850,7 +2857,7 @@ weights:
 0
 0
 0
-0 5
+0	5
 0
 0
 0
@@ -2886,7 +2893,7 @@ weights:
 0
 0
 0
-0.631287 2
+0.631287	2
 0
 0
 0
@@ -2905,7 +2912,7 @@ weights:
 0
 0
 0
-0.697508 13
+0.697508	13
 0
 0
 0
@@ -2938,7 +2945,7 @@ weights:
 0
 0
 0
--0.66435 8
+-0.66435	8
 0
 0
 0
@@ -3113,7 +3120,7 @@ weights:
 0
 0
 0
-0.363797 9
+0.363797	9
 0
 0
 0
@@ -3142,7 +3149,7 @@ weights:
 0
 0
 0
--0.436931 6
+-0.436931	6
 0
 0
 0
@@ -3185,7 +3192,7 @@ weights:
 0
 0
 0
-0.0537705 10
+0.0537705	10
 0
 0
 0
@@ -3272,7 +3279,7 @@ weights:
 0
 0
 0
-0.674943 4
+0.674943	4
 0
 0
 0
@@ -3428,7 +3435,7 @@ weights:
 0
 0
 0
-0.547848 11
+0.547848	11
 0
 0
 0
@@ -3464,7 +3471,7 @@ weights:
 0
 0
 0
-0.147438 1
+0.147438	1
 0
 0
 0
@@ -3474,7 +3481,7 @@ weights:
 0
 0
 0
-0.332497 7
+0.332497	7
 0
 0
 0
@@ -3546,7 +3553,7 @@ weights:
 0
 0
 0
-0 BIAS
+0	BIAS
 running ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024 -b 0
 0.947134
 0.272475
@@ -3823,8 +3830,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -3848,8 +3856,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -3872,8 +3881,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 
@@ -3896,8 +3906,9 @@ eps=1e-006
 l1_c=1
 l2_c=0
 positive_weight=1
-ftrl_alpha=0
-ftrl_beta=0
+ftrl_alpha=0.001
+ftrl_beta=1
+ftrl_round=1
 bias=1
 columns=14
 

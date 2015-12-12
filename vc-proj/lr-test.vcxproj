@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main\lr-test.cc" />
+    <ClCompile Include="..\src\core\lr-test.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5D66754C-1D99-42BD-B3B0-80EB942938C9}</ProjectGuid>

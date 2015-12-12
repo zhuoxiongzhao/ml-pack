@@ -35,6 +35,8 @@ typedef FeatureReverseMap::const_iterator FeatureReverseMapCI;
 typedef std::pair <FeatureReverseMap::const_iterator,
         FeatureReverseMap::const_iterator> FeatureReverseMapCII;
 
+void SaveFeatureMap(FILE* fp, const FeatureMap& feature_map);
+void LoadFeatureMap(FILE* fp, FeatureMap* feature_map);
 void FeatureMapToFeatureReverseMap(
   const FeatureMap& feature_map,
   FeatureReverseMap* fr_map);
@@ -125,11 +127,12 @@ class Problem {
   void Clear();
 
   // format: label index:value[ index:value]
-  // indices start from 1.
+  // index starts from 1.
   void LoadFile(FILE* fp);
-  // format label name:value[ name:value]
-  // feature names are hashed into [1, dimension].
-  // "fr_map" is optional.
+  // format: label name:value[ name:value]
+  // "name" will be hashed into [1, dimension].
+  // "fr_map" is optional,
+  // it will be filled with the mapping of <index, feature_name>.
   void LoadHashFile(
     FILE* fp,
     int dimension,

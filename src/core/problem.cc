@@ -5,8 +5,35 @@
 #include <algorithm>
 
 #include "core/problem.h"
-#include "core/line-reader.h"
 #include "core/hash-entry.h"
+#include "core/line-reader.h"
+
+void SaveFeatureMap(FILE* fp, const FeatureMap& feature_map) {
+  FeatureMapCI it = feature_map.begin();
+  FeatureMapCI last = feature_map.end();
+  for (; it != last; ++it) {
+    fprintf(fp, "%s\t%d\n", it->first.c_str(), it->second);
+  }
+}
+
+void LoadFeatureMap(FILE* fp, FeatureMap* feature_map) {
+  LineReader line_reader;
+  std::string name;
+  int index;
+  char* p;
+
+  while (line_reader.ReadLine(fp) != NULL) {
+    p = strtok(line_reader.buf, DELIMITER);
+    if (p == NULL) {
+      // empty line
+      continue;
+    }
+    name = p;
+    p = strtok(NULL, DELIMITER);
+    index = xatoi(p);
+    (*feature_map)[name] = index;
+  }
+}
 
 void FeatureMapToFeatureReverseMap(
   const FeatureMap& feature_map,
@@ -278,22 +305,20 @@ void Problem::LoadFileHashProc(
   FeatureMap* feature_map = ((LoadFileProcArg*)callback_arg)->feature_map;
   *hashed_index = (unsigned int)HashString(name) % problem->columns() + 1;
   if (feature_map) {
-    feature_map->insert(std::make_pair(name, *hashed_index));
+    (*feature_map)[name] = *hashed_index;
   }
 }
 
 void Problem::LoadFile(FILE* fp) {
   Clear();
 
-  LoadFileProcArg callback_arg;
-  callback_arg.problem = this;
-  callback_arg.feature_map = NULL;
-
+  LoadFileProcArg callback_arg = {this, NULL};
   x_index_.push_back(0);
   own_x_space_ = 1;
   x_space_ = new FeatureNodeVector();
   ForeachFeatureNode(fp, 1, 1, &callback_arg, &LoadFileProc);
   x_index_.pop_back();
+
   Log("Load %d*%d text samples\n", rows(), columns());
 }
 
@@ -307,10 +332,7 @@ void Problem::LoadHashFile(
   if (fr_map) {
     feature_map = new FeatureMap();
   }
-  LoadFileProcArg callback_arg;
-  callback_arg.problem = this;
-  callback_arg.feature_map = feature_map;
-
+  LoadFileProcArg callback_arg = {this, feature_map};
   columns_ = dimension;
   x_index_.push_back(0);
   own_x_space_ = 1;
@@ -347,7 +369,7 @@ void Problem::LoadBinary(FILE* fp) {
   x_index_.push_back(0);
   for (int i = 0; i < x_space_size; i++) {
     if ((*x_space_)[i].index == -1) {
-      x_index_.push_back(i);
+      x_index_.push_back(i + 1);
     }
   }
   x_index_.pop_back();

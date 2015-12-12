@@ -74,7 +74,7 @@ common/hash-function.o: common/hash-function.c
 lr-main$(EXE): main/lr-main.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-lr-test$(EXE): main/lr-test.cc $(LIB)
+lr-test$(EXE): core/lr-test.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 gen-feature-map$(EXE): main/gen-feature-map.cc $(LIB)

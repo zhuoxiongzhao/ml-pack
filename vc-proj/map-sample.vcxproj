@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main\map-sample.cc" />
+    <ClCompile Include="..\src\lr\map-sample.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DF6ACCE6-3AEC-4C63-888C-C2C76BD966B2}</ProjectGuid>

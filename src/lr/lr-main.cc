@@ -4,8 +4,8 @@
 // lr train and predict
 //
 
-#include "core/lr.h"
-#include "core/metric.h"
+#include "lr/lr.h"
+#include "lr/metric.h"
 
 int action = 0;
 std::string model_filename = "model";

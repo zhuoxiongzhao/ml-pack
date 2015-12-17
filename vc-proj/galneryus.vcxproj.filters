@@ -4,29 +4,11 @@
     <Filter Include="common">
       <UniqueIdentifier>{1859a7f7-90b0-4573-aa55-ad949dbd156a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="core">
+    <Filter Include="lr">
       <UniqueIdentifier>{9454f025-2650-471b-9867-fea8147bc127}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\core\hash-entry.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\line-reader.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\lr.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\metric.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\problem.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\x.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\common\blas-decl.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -39,20 +21,26 @@
     <ClInclude Include="..\src\common\lbfgs.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\lr\lr.h">
+      <Filter>lr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lr\metric.h">
+      <Filter>lr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lr\problem.h">
+      <Filter>lr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\line-reader.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\x.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\hash-entry.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\core\hash-entry.cc">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\lr.cc">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\metric.cc">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\problem.cc">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\common\city.cc">
       <Filter>common</Filter>
     </ClCompile>
@@ -78,6 +66,18 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\src\common\lbfgs-test.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lr\lr.cc">
+      <Filter>lr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lr\metric.cc">
+      <Filter>lr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lr\problem.cc">
+      <Filter>lr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\hash-entry.cc">
       <Filter>common</Filter>
     </ClCompile>
   </ItemGroup>

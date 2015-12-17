@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "core/x.h"
+#include "common/x.h"
 
 struct FeatureNode {
   int index;  // index starts from 1

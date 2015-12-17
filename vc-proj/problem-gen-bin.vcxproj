@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main\problem-gen-bin.cc" />
+    <ClCompile Include="..\src\lr\problem-gen-bin.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{734D15CD-247A-495E-8FCD-644AD3096669}</ProjectGuid>

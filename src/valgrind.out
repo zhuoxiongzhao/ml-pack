@@ -74,7 +74,7 @@ weights:
 0.16984
 0.218078
 -0.0135538
-running ./lr-main train test-data/heart_scale.unordered
+running ./lr-main train lr-test-data/heart_scale.unordered
 eps=1e-006
 l1_c=1
 l2_c=0
@@ -100,7 +100,7 @@ weights:
 1.42669
 0.690578
 1.09828
-running ./lr-main train test-data/heart_scale -o model
+running ./lr-main train lr-test-data/heart_scale -o model
 eps=1e-006
 l1_c=1
 l2_c=0
@@ -126,7 +126,7 @@ weights:
 1.42669
 0.690578
 1.09828
-running ./lr-main predict test-data/heart_scale -l 1 -o pred
+running ./lr-main predict lr-test-data/heart_scale -l 1 -o pred
 0.970857
 0.414449
 0.197683
@@ -397,7 +397,7 @@ running ./lr-main predict test-data/heart_scale -l 1 -o pred
 0.0729626
 0.49929
 0.98864
-running ./lr-main predict test-data/heart_scale.bad -l 1 -o pred
+running ./lr-main predict lr-test-data/heart_scale.bad -l 1 -o pred
 0.970857
 0.414449
 0.197683
@@ -668,7 +668,7 @@ running ./lr-main predict test-data/heart_scale.bad -l 1 -o pred
 0.0729626
 0.49929
 0.98864
-running ./lr-main predict test-data/heart_scale.nolabel -l 0 -o pred
+running ./lr-main predict lr-test-data/heart_scale.nolabel -l 0 -o pred
 0.970857
 0.414449
 0.197683
@@ -939,7 +939,7 @@ running ./lr-main predict test-data/heart_scale.nolabel -l 0 -o pred
 0.0729626
 0.49929
 0.98864
-running ./lr-main predict test-data/heart_scale.nolabel.bad -l 0 -o pred
+running ./lr-main predict lr-test-data/heart_scale.nolabel.bad -l 0 -o pred
 
 0.414449
 0.197683
@@ -1210,7 +1210,7 @@ running ./lr-main predict test-data/heart_scale.nolabel.bad -l 0 -o pred
 0.0729626
 0.49929
 0.98864
-running ./lr-main train test-data/heart_scale -o model -ft 1 -d 1024
+running ./lr-main train lr-test-data/heart_scale -o model -ft 1 -d 1024
 eps=1e-006
 l1_c=1
 l2_c=0
@@ -2247,7 +2247,7 @@ weights:
 0
 0
 1.10114	BIAS
-running ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024
+running ./lr-main predict -m model lr-test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024
 0.970976
 0.415209
 0.197646
@@ -2518,7 +2518,7 @@ running ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -f
 0.0729489
 0.499173
 0.988687
-running ./lr-main train test-data/heart_scale -o model -ft 1 -d 1024 -b 0
+running ./lr-main train lr-test-data/heart_scale -o model -ft 1 -d 1024 -b 0
 eps=1e-006
 l1_c=1
 l2_c=0
@@ -3554,7 +3554,7 @@ weights:
 0
 0
 0	BIAS
-running ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024 -b 0
+running ./lr-main predict -m model lr-test-data/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024 -b 0
 0.947134
 0.272475
 0.186827
@@ -3825,7 +3825,7 @@ running ./lr-main predict -m model test-data/heart_scale.nolabel -l 0 -o pred -f
 0.0561331
 0.59539
 0.981502
-running ./lr-main.exe train test-data/heart_scale -t 0.3
+running ./lr-main.exe train lr-test-data/heart_scale -t 0.3
 eps=1e-006
 l1_c=1
 l2_c=0
@@ -3851,7 +3851,7 @@ weights:
 1.55319
 0.655159
 0.877174
-running ./lr-main.exe train test-data/heart_scale -cv 3
+running ./lr-main.exe train lr-test-data/heart_scale -cv 3
 eps=1e-006
 l1_c=1
 l2_c=0
@@ -3927,9 +3927,9 @@ weights:
 1.98912
 0.610247
 1.34106
-running ./gen-feature-map test-data/samples2 -l 1 -o test-data/samples2.feature-map
-running ./map-sample -f test-data/samples2.feature-map -l 1 test-data/samples2 -o test-data/samples2.libsvm
-running ./gen-feature-map test-data/samples3 -l 0 -o test-data/samples3.feature-map
-running ./map-sample -f test-data/samples3.feature-map -l 0 test-data/samples3 -o test-data/samples3.libsvm
-running ./problem-gen-bin test-data/heart_scale
-running ./problem-load-bin test-data/heart_scale.bin
+running ./gen-feature-map lr-test-data/samples2 -l 1 -o lr-test-data/samples2.feature-map
+running ./map-sample -f lr-test-data/samples2.feature-map -l 1 lr-test-data/samples2 -o lr-test-data/samples2.libsvm
+running ./gen-feature-map lr-test-data/samples3 -l 0 -o lr-test-data/samples3.feature-map
+running ./map-sample -f lr-test-data/samples3.feature-map -l 0 lr-test-data/samples3 -o lr-test-data/samples3.libsvm
+running ./problem-gen-bin lr-test-data/heart_scale
+running ./problem-load-bin lr-test-data/heart_scale.bin

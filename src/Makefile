@@ -26,12 +26,12 @@ common/ddot.o \
 common/dscal.o \
 common/dswap.o \
 common/city.o \
+common/hash-entry.o \
 common/hash-function.o \
 common/lbfgs.o \
-core/hash-entry.o \
-core/lr.o \
-core/metric.o \
-core/problem.o
+lr/lr.o \
+lr/metric.o \
+lr/problem.o
 
 LIB=libx.a
 
@@ -71,22 +71,22 @@ common/lbfgs.o: common/lbfgs.c
 common/hash-function.o: common/hash-function.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-lr-main$(EXE): main/lr-main.cc $(LIB)
+lr-main$(EXE): lr/lr-main.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-lr-test$(EXE): core/lr-test.cc $(LIB)
+lr-test$(EXE): lr/lr-test.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-gen-feature-map$(EXE): main/gen-feature-map.cc $(LIB)
+gen-feature-map$(EXE): lr/gen-feature-map.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-map-sample$(EXE): main/map-sample.cc $(LIB)
+map-sample$(EXE): lr/map-sample.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-problem-gen-bin$(EXE): main/problem-gen-bin.cc $(LIB)
+problem-gen-bin$(EXE): lr/problem-gen-bin.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-problem-load-bin$(EXE): main/problem-load-bin.cc $(LIB)
+problem-load-bin$(EXE): lr/problem-load-bin.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:

@@ -4,9 +4,9 @@
 
 #include <algorithm>
 
-#include "core/problem.h"
-#include "core/hash-entry.h"
-#include "core/line-reader.h"
+#include "common/hash-entry.h"
+#include "common/line-reader.h"
+#include "lr/problem.h"
 
 void SaveFeatureMap(FILE* fp, const FeatureMap& feature_map) {
   FeatureMapCI it = feature_map.begin();

@@ -4,11 +4,11 @@
 
 #include <string>
 
-#include "core/lr.h"
-#include "core/hash-entry.h"
-#include "core/line-reader.h"
 #include "common/blas-decl.h"
+#include "common/hash-entry.h"
 #include "common/lbfgs.h"
+#include "common/line-reader.h"
+#include "lr/lr.h"
 
 LRModel::LRModel() {
   eps_ = 1e-6;

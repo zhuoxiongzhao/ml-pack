@@ -6,8 +6,8 @@
 
 #include <algorithm>
 
-#include "core/metric.h"
-#include "core/x.h"
+#include "common/x.h"
+#include "lr/metric.h"
 
 void Evaluate(const std::vector<double>& pred,
               const std::vector<double>& y,

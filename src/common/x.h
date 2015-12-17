@@ -4,8 +4,8 @@
 // common utils
 //
 
-#ifndef SRC_CORE_X_H_
-#define SRC_CORE_X_H_
+#ifndef SRC_COMMON_X_H_
+#define SRC_COMMON_X_H_
 
 #include <errno.h>
 #include <math.h>
@@ -207,4 +207,4 @@ class ScopedFile {
   }
 };
 
-#endif  // SRC_CORE_X_H_
+#endif  // SRC_COMMON_X_H_

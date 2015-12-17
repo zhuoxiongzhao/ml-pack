@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main\gen-feature-map.cc" />
+    <ClCompile Include="..\src\lr\gen-feature-map.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{35E01BC6-CCBA-4530-A3B5-98E65F3E3459}</ProjectGuid>

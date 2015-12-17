@@ -4,16 +4,16 @@
 // lr tests
 //
 
-#include "core/lr.h"
+#include "lr/lr.h"
 
 int main() {
   Problem problem;
 
   {
 #if defined _WIN32
-    ScopedFile fp("../src/test-data/heart_scale", ScopedFile::Read);
+    ScopedFile fp("../src/lr-test-data/heart_scale", ScopedFile::Read);
 #else
-    ScopedFile fp("test-data/heart_scale", ScopedFile::Read);
+    ScopedFile fp("lr-test-data/heart_scale", ScopedFile::Read);
 #endif
     problem.LoadFile(fp);
   }

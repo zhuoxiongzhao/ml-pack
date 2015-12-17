@@ -13,14 +13,14 @@
   <ItemGroup>
     <ClInclude Include="..\src\common\blas-decl.h" />
     <ClInclude Include="..\src\common\city.h" />
+    <ClInclude Include="..\src\common\hash-entry.h" />
     <ClInclude Include="..\src\common\hash-function.h" />
     <ClInclude Include="..\src\common\lbfgs.h" />
-    <ClInclude Include="..\src\core\hash-entry.h" />
-    <ClInclude Include="..\src\core\line-reader.h" />
-    <ClInclude Include="..\src\core\lr.h" />
-    <ClInclude Include="..\src\core\metric.h" />
-    <ClInclude Include="..\src\core\problem.h" />
-    <ClInclude Include="..\src\core\x.h" />
+    <ClInclude Include="..\src\common\line-reader.h" />
+    <ClInclude Include="..\src\common\x.h" />
+    <ClInclude Include="..\src\lr\lr.h" />
+    <ClInclude Include="..\src\lr\metric.h" />
+    <ClInclude Include="..\src\lr\problem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\city.cc" />
@@ -29,13 +29,13 @@
     <ClCompile Include="..\src\common\ddot.c" />
     <ClCompile Include="..\src\common\dscal.c" />
     <ClCompile Include="..\src\common\dswap.c" />
+    <ClCompile Include="..\src\common\hash-entry.cc" />
     <ClCompile Include="..\src\common\hash-function.c" />
     <ClCompile Include="..\src\common\lbfgs-test.c" />
     <ClCompile Include="..\src\common\lbfgs.c" />
-    <ClCompile Include="..\src\core\hash-entry.cc" />
-    <ClCompile Include="..\src\core\lr.cc" />
-    <ClCompile Include="..\src\core\metric.cc" />
-    <ClCompile Include="..\src\core\problem.cc" />
+    <ClCompile Include="..\src\lr\lr.cc" />
+    <ClCompile Include="..\src\lr\metric.cc" />
+    <ClCompile Include="..\src\lr\problem.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06A0D531-E2F7-42BB-AF9D-102C82448A3A}</ProjectGuid>

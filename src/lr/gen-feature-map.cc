@@ -2,13 +2,12 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 // map non-LIBSVM sample files to LIBSVM format and generate a feature map
-// TODO
+// TODO(yafei)
 
 #include <map>
 #include <string>
 
 #include "common/line-reader.h"
-#include "common/x.h"
 #include "lr/problem.h"
 
 typedef std::map<std::string, int> FeatureMap;

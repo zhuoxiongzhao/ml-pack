@@ -7,6 +7,9 @@
     <Filter Include="lr">
       <UniqueIdentifier>{9454f025-2650-471b-9867-fea8147bc127}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lda">
+      <UniqueIdentifier>{f292c463-7d66-439f-b842-06cf1dfec8f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\common\blas-decl.h">
@@ -38,6 +41,18 @@
     </ClInclude>
     <ClInclude Include="..\src\common\hash-entry.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\alias.h">
+      <Filter>lda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\mt64.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\mt19937ar.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\model.h">
+      <Filter>lda</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +94,18 @@
     </ClCompile>
     <ClCompile Include="..\src\common\hash-entry.cc">
       <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\alias.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\mt19937-64.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\mt19937ar.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\model.cc">
+      <Filter>lda</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

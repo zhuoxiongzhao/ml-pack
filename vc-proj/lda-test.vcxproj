@@ -11,54 +11,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\common\blas-decl.h" />
-    <ClInclude Include="..\src\common\city.h" />
-    <ClInclude Include="..\src\common\hash-entry.h" />
-    <ClInclude Include="..\src\common\hash-function.h" />
-    <ClInclude Include="..\src\common\lbfgs.h" />
-    <ClInclude Include="..\src\common\line-reader.h" />
-    <ClInclude Include="..\src\common\mt19937ar.h" />
-    <ClInclude Include="..\src\common\mt64.h" />
-    <ClInclude Include="..\src\common\x.h" />
-    <ClInclude Include="..\src\lda\alias.h" />
-    <ClInclude Include="..\src\lda\model.h" />
-    <ClInclude Include="..\src\lr\lr.h" />
-    <ClInclude Include="..\src\lr\metric.h" />
-    <ClInclude Include="..\src\lr\problem.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\src\common\city.cc" />
-    <ClCompile Include="..\src\common\daxpy.c" />
-    <ClCompile Include="..\src\common\dcopy.c" />
-    <ClCompile Include="..\src\common\ddot.c" />
-    <ClCompile Include="..\src\common\dscal.c" />
-    <ClCompile Include="..\src\common\dswap.c" />
-    <ClCompile Include="..\src\common\hash-entry.cc" />
-    <ClCompile Include="..\src\common\hash-function.c" />
-    <ClCompile Include="..\src\common\lbfgs-test.c" />
-    <ClCompile Include="..\src\common\lbfgs.c" />
-    <ClCompile Include="..\src\common\mt19937-64.c" />
-    <ClCompile Include="..\src\common\mt19937ar.c" />
-    <ClCompile Include="..\src\lda\alias.cc" />
-    <ClCompile Include="..\src\lda\model.cc" />
-    <ClCompile Include="..\src\lr\lr.cc" />
-    <ClCompile Include="..\src\lr\metric.cc" />
-    <ClCompile Include="..\src\lr\problem.cc" />
+    <ClCompile Include="..\src\lda\lda-test.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{06A0D531-E2F7-42BB-AF9D-102C82448A3A}</ProjectGuid>
+    <ProjectGuid>{B143DFF0-1BCB-4341-AC52-37879049508E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>galneryus</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -76,10 +44,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>..\src;$(IncludePath)</IncludePath>
+    <LinkIncremental>false</LinkIncremental>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>..\src;$(IncludePath)</IncludePath>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -87,7 +57,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
       <ExceptionHandling>Async</ExceptionHandling>
@@ -96,12 +66,10 @@
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)$(Configuration)\galneryus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -111,17 +79,18 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>$(SolutionDir)$(Configuration)\galneryus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -8,33 +8,6 @@
 #include "common/line-reader.h"
 #include "lr/problem.h"
 
-void SaveFeatureMap(FILE* fp, const FeatureMap& feature_map) {
-  FeatureMapCI it = feature_map.begin();
-  FeatureMapCI last = feature_map.end();
-  for (; it != last; ++it) {
-    fprintf(fp, "%s\t%d\n", it->first.c_str(), it->second);
-  }
-}
-
-void LoadFeatureMap(FILE* fp, FeatureMap* feature_map) {
-  LineReader line_reader;
-  std::string name;
-  int index;
-  char* p;
-
-  while (line_reader.ReadLine(fp) != NULL) {
-    p = strtok(line_reader.buf, DELIMITER);
-    if (p == NULL) {
-      // empty line
-      continue;
-    }
-    name = p;
-    p = strtok(NULL, DELIMITER);
-    index = xatoi(p);
-    (*feature_map)[name] = index;
-  }
-}
-
 void FeatureMapToFeatureReverseMap(
   const FeatureMap& feature_map,
   FeatureReverseMap* fr_map) {
@@ -319,7 +292,7 @@ void Problem::LoadFile(FILE* fp) {
   ForeachFeatureNode(fp, 1, 1, &callback_arg, &LoadFileProc);
   x_index_.pop_back();
 
-  Log("Load %d*%d text samples\n", rows(), columns());
+  Log("Loaded %d*%d text samples\n", rows(), columns());
 }
 
 void Problem::LoadHashFile(
@@ -346,7 +319,7 @@ void Problem::LoadHashFile(
     delete feature_map;
   }
 
-  Log("Load %d*%d hash text samples\n", rows(), columns());
+  Log("Loaded %d*%d hash text samples\n", rows(), columns());
 }
 
 void Problem::LoadBinary(FILE* fp) {

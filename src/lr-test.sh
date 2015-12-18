@@ -2,13 +2,12 @@
 #
 # Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 #
-# do valgrind test
-#
+
 valgrind=$(which valgrind 2>/dev/null)
 if test x$valgrind != "x"; then
     valgrind="$valgrind --tool=memcheck"
 fi
-output="valgrind.out"
+output="lr-test.out"
 data_dir="lr-test-data"
 
 set -e
@@ -46,10 +45,10 @@ cat model >> $output
 run ./lr-main predict -m model $data_dir/heart_scale.nolabel -l 0 -o pred -ft 1 -d 1024 -b 0
 cat pred >> $output
 
-run ./lr-main.exe train $data_dir/heart_scale -t 0.3 >> $output
+run ./lr-main.exe train $data_dir/heart_scale -t 0.3
 cat model >> $output
 
-run ./lr-main.exe train $data_dir/heart_scale -cv 3 >> $output
+run ./lr-main.exe train $data_dir/heart_scale -cv 3
 cat model0 >> $output
 cat model1 >> $output
 cat model2 >> $output

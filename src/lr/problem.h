@@ -4,8 +4,8 @@
 // features, samples and problem set
 //
 
-#ifndef SRC_CORE_PROBLEM_H_
-#define SRC_CORE_PROBLEM_H_
+#ifndef SRC_LR_PROBLEM_H_
+#define SRC_LR_PROBLEM_H_
 
 #include <map>
 #include <string>
@@ -35,8 +35,6 @@ typedef FeatureReverseMap::const_iterator FeatureReverseMapCI;
 typedef std::pair <FeatureReverseMap::const_iterator,
         FeatureReverseMap::const_iterator> FeatureReverseMapCII;
 
-void SaveFeatureMap(FILE* fp, const FeatureMap& feature_map);
-void LoadFeatureMap(FILE* fp, FeatureMap* feature_map);
 void FeatureMapToFeatureReverseMap(
   const FeatureMap& feature_map,
   FeatureReverseMap* fr_map);
@@ -153,4 +151,4 @@ class Problem {
     double testing_portion) const;
 };
 
-#endif  // SRC_CORE_PROBLEM_H_
+#endif  // SRC_LR_PROBLEM_H_

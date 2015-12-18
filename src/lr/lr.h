@@ -4,8 +4,8 @@
 // logistic regression
 //
 
-#ifndef SRC_CORE_LR_H_
-#define SRC_CORE_LR_H_
+#ifndef SRC_LR_LR_H_
+#define SRC_LR_LR_H_
 
 #include "lr/problem.h"
 
@@ -113,4 +113,4 @@ class LRModel {
   void Save(FILE* fp, const FeatureReverseMap* fr_map = NULL) const;
 };
 
-#endif  // SRC_CORE_LR_H_
+#endif  // SRC_LR_LR_H_

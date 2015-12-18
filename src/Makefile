@@ -29,6 +29,10 @@ common/city.o \
 common/hash-entry.o \
 common/hash-function.o \
 common/lbfgs.o \
+common/mt19937-64.o \
+common/mt19937ar.o \
+lda/alias.o \
+lda/model.o \
 lr/lr.o \
 lr/metric.o \
 lr/problem.o
@@ -36,6 +40,7 @@ lr/problem.o
 LIB=libx.a
 
 BIN= \
+lda-test$(EXE) \
 lr-main$(EXE) \
 lr-test$(EXE) \
 gen-feature-map$(EXE) \
@@ -70,6 +75,15 @@ common/lbfgs.o: common/lbfgs.c
 
 common/hash-function.o: common/hash-function.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+common/mt19937-64.o: common/mt19937-64.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+common/mt19937ar.o: common/mt19937ar.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+lda-test$(EXE): lda/lda-test.cc $(LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 lr-main$(EXE): lr/lr-main.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^

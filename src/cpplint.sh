@@ -5,4 +5,4 @@
 # check code style
 #
 
-python cpplint.py $(find . -name "*.cc" -or -name "*.h" | grep -v "city\.\(cc\|h\)" | xargs)
+python cpplint.py $(find . -name "*.cc" -or -name "*.h" | grep -v "city\.cc\|city\.h\|mt64\.h\|mt19937ar\.h" | xargs)

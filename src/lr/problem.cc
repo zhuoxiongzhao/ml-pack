@@ -26,7 +26,7 @@ void ForeachFeatureNode(
   void* callback_arg,
   FeatureNodeProc callback) {
   LineReader line_reader;
-  int line_no = 1;
+  int line_no = 0;
   char* endptr;
   char* label;
   char* index;
@@ -40,6 +40,8 @@ void ForeachFeatureNode(
   FeatureNode xj;
 
   while (line_reader.ReadLine(fp) != NULL) {
+    line_no++;
+
     error_flag = Success;
     feature_error_flag = 0;
     sample_max_column = 0;
@@ -122,7 +124,6 @@ void ForeachFeatureNode(
 callback_label:
     callback(with_label, sort_x_by_index, callback_arg,
              y, sample_max_column, &x, error_flag);
-    line_no++;
   }
 }
 
@@ -134,7 +135,7 @@ void ForeachFeatureNode_Hash(
   FeatureNodeProc callback,
   FeatureNodeHashProc hasher) {
   LineReader line_reader;
-  int line_no = 1;
+  int line_no = 0;
   char* endptr;
   char* label;
   char* index;
@@ -149,6 +150,8 @@ void ForeachFeatureNode_Hash(
 
   feature_error_flag = 0;
   while (line_reader.ReadLine(fp) != NULL) {
+    line_no++;
+
     error_flag = Success;
     sample_max_column = 0;
     y = 0.0;
@@ -218,7 +221,6 @@ void ForeachFeatureNode_Hash(
 callback_label:
     callback(with_label, sort_x_by_index, callback_arg,
              y, sample_max_column, &x, error_flag);
-    line_no++;
   }
 }
 

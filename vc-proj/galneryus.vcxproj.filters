@@ -51,7 +51,16 @@
     <ClInclude Include="..\src\common\mt19937ar.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lda\model.h">
+    <ClInclude Include="..\src\lda\array2d.h">
+      <Filter>lda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\sorted-vector.h">
+      <Filter>lda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\hist.h">
+      <Filter>lda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\train.h">
       <Filter>lda</Filter>
     </ClInclude>
   </ItemGroup>
@@ -104,7 +113,19 @@
     <ClCompile Include="..\src\common\mt19937ar.c">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\lda\model.cc">
+    <ClCompile Include="..\src\lda\train.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\alias-lda-sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\light-lda-sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\sparse-lda-sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\sparse-plain-gibbs-sampler.cc">
       <Filter>lda</Filter>
     </ClCompile>
   </ItemGroup>

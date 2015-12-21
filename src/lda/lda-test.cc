@@ -6,7 +6,13 @@
 
 #include "common/x.h"
 #include "lda/alias.h"
-#include "lda/model.h"
+#include "lda/train.h"
+
+#if defined _WIN32
+#define TEST_DATA_DIR "../src/lda-test-data"
+#else
+#define TEST_DATA_DIR "lda-test-data"
+#endif
 
 void TestAlias() {
   std::vector<double> prob;
@@ -28,24 +34,60 @@ void TestAlias() {
   }
 }
 
-void TestModel() {
-#if defined _WIN32
-  ScopedFile fp("../src/lda-test-data/yahoo-train", ScopedFile::Read);
-#else
-  ScopedFile fp("lda-test-data/yahoo-train", ScopedFile::Read);
-#endif
-  PlainGibbsSampler model;
+void TestYahooModel() {
+  ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
+  SparseGibbsSampler model;
   model.LoadCorpus(fp, 0);
-  model.K() = 2;
+  model.K() = 3;
   model.alpha() = 0.05;
   model.beta() = 0.1;
   model.total_iteration() = 100;
   model.Train();
-  model.SaveModel("yahoo");
+  model.SaveModel(TEST_DATA_DIR"/yahoo");
+}
+
+void TestYahooWithIdModel() {
+  ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
+  PlainGibbsSampler model;
+  model.LoadCorpus(fp, 1);
+  model.K() = 3;
+  model.alpha() = 0.05;
+  model.beta() = 0.1;
+  model.total_iteration() = 100;
+  model.hp_optimze() = 1;
+  model.Train();
+  model.SaveModel(TEST_DATA_DIR"/yahoo-with-id");
+}
+
+void TestYahooWithIdModel2() {
+  ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
+  SparseGibbsSampler model;
+  model.LoadCorpus(fp, 1);
+  model.K() = 3;
+  model.alpha() = 0.05;
+  model.beta() = 0.1;
+  model.total_iteration() = 100;
+  model.Train();
+  model.SaveModel(TEST_DATA_DIR"/yahoo-with-id2");
+}
+
+void Test20NewsModel() {
+  ScopedFile fp(TEST_DATA_DIR"/20news-train", ScopedFile::Read);
+  PlainGibbsSampler model;
+  model.LoadCorpus(fp, 0);
+  model.K() = 20;
+  model.alpha() = 0.05;
+  model.beta() = 0.1;
+  model.total_iteration() = 200;
+  model.Train();
+  model.SaveModel(TEST_DATA_DIR"/20news");
 }
 
 int main() {
-  TestAlias();
-  TestModel();
+  // TestAlias();
+  // TestYahooModel();
+  TestYahooWithIdModel();
+  // TestYahooWithIdModel2();
+  // Test20NewsModel();
   return 0;
 }

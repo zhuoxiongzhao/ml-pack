@@ -90,7 +90,7 @@ void Process(FILE* fin, FILE* fout, const FeatureMap& feature_index_map) {
       } else {
         fprintf(fout, "%d:%g", x[0].index, x[0].value);
       }
-      for (size_t j = 1; j < x.size(); j++) {
+      for (int j = 1; j < (int)x.size(); j++) {
         fprintf(fout, " %d:%g", x[j].index, x[j].value);
       }
     }

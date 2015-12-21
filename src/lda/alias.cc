@@ -19,8 +19,7 @@ static RandInializer rand_inializer;
 
 void Alias::Construct(const std::vector<double>& prob) {
   double prob_sum = 0.0;
-  int size = (int)prob.size();
-  for (int i = 0; i < size; i++) {
+  for (int i = 0, size = (int)prob.size(); i < size; i++) {
     prob_sum += prob[i];
   }
   Construct(prob, prob_sum);

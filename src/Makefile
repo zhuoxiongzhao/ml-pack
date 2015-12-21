@@ -2,6 +2,7 @@ AR=ar rc
 RANLIB=ranlib
 CXX=g++
 CC=gcc
+CPPFLAGS=
 CFLAGS=-g -Wall -O2 -I.
 CXXFLAGS=-g -Wall -O2 -I.
 LDFLAGS=
@@ -32,7 +33,11 @@ common/lbfgs.o \
 common/mt19937-64.o \
 common/mt19937ar.o \
 lda/alias.o \
-lda/model.o \
+lda/alias-lda-sampler.o \
+lda/light-lda-sampler.o \
+lda/sparse-lda-sampler.o \
+lda/sparse-plain-gibbs-sampler.o \
+lda/train.o \
 lr/lr.o \
 lr/metric.o \
 lr/problem.o

@@ -15,4 +15,5 @@ astyle --style=google \
 --lineend=linux \
 --pad-header \
 --pad-oper \
+-n \
 $(find . -name "*.c" -or -name "*.cc" -or -name "*.h" | xargs)

@@ -1,11 +1,11 @@
 // Copyright (c) 2015 Tencent Inc.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// document, corpus and trainer
+// document, corpus and lda sampler
 //
 
-#ifndef SRC_LDA_TRAIN_H_
-#define SRC_LDA_TRAIN_H_
+#ifndef SRC_LDA_SAMPLER_H_
+#define SRC_LDA_SAMPLER_H_
 
 #include <stdio.h>
 #include <string>
@@ -37,9 +37,9 @@ class PlainGibbsSampler {
   // N_k: # of words assigned to topic k
   std::vector<int> N_k_;
   // N_mk[m][k]: # of words in doc m assigned to topic k
-  Array2D<int> N_mk_;
-  // N_kv[k][v]: # of word v assigned to topic k
-  Array2D<int> N_kv_;
+  Hists N_mk_;
+  // N_kv[v][k]: # of word v assigned to topic k
+  Hists N_vk_;
   // topic CDF for sampling
   std::vector<double> topic_cdf_;
 
@@ -77,6 +77,8 @@ class PlainGibbsSampler {
   int burnin_iteration_;
   int log_likelyhood_interval_;
   int iteration_;
+  // a value of enum HistType
+  int hist_type_;
 
  public:
   PlainGibbsSampler() : K_(0),
@@ -90,7 +92,8 @@ class PlainGibbsSampler {
     hp_opt_beta_iteration_(0),
     total_iteration_(0),
     burnin_iteration_(0),
-    log_likelyhood_interval_(0) {}
+    log_likelyhood_interval_(0),
+    hist_type_(kSparseHist) {}
   virtual ~PlainGibbsSampler();
 
   // setters
@@ -106,7 +109,7 @@ class PlainGibbsSampler {
     return hp_beta_;
   }
 
-  int& hp_optimze() {
+  int& hp_opt() {
     return hp_opt_;
   }
 
@@ -141,6 +144,10 @@ class PlainGibbsSampler {
   int& log_likelyhood_interval() {
     return log_likelyhood_interval_;
   }
+
+  int& hist_type() {
+    return hist_type_;
+  }
   // end of setters
 
   void LoadCorpus(FILE* fp, int with_id);
@@ -174,17 +181,4 @@ class PlainGibbsSampler {
   }
 };
 
-class SparseGibbsSampler : public PlainGibbsSampler {
- protected:
-  std::vector<SparseHist> sparse_N_mk_;
-  std::vector<SparseHist> sparse_N_kv_;
-
- public:
-  virtual int InitializeSampler();
-  virtual void CollectTheta(Array2D<double>* theta) const;
-  virtual void CollectPhi(Array2D<double>* phi) const;
-  virtual double LogLikelyhood() const;
-  virtual void SampleDocument(int m);
-};
-
-#endif  // SRC_LDA_TRAIN_H_
+#endif  // SRC_LDA_SAMPLER_H_

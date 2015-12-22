@@ -34,10 +34,10 @@ common/mt19937-64.o \
 common/mt19937ar.o \
 lda/alias.o \
 lda/alias-lda-sampler.o \
+lda/hist.o \
 lda/light-lda-sampler.o \
+lda/sampler.o \
 lda/sparse-lda-sampler.o \
-lda/sparse-plain-gibbs-sampler.o \
-lda/train.o \
 lr/lr.o \
 lr/metric.o \
 lr/problem.o

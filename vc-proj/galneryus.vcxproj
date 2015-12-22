@@ -22,8 +22,7 @@
     <ClInclude Include="..\src\common\x.h" />
     <ClInclude Include="..\src\lda\alias.h" />
     <ClInclude Include="..\src\lda\array2d.h" />
-    <ClInclude Include="..\src\lda\train.h" />
-    <ClInclude Include="..\src\lda\sorted-vector.h" />
+    <ClInclude Include="..\src\lda\sampler.h" />
     <ClInclude Include="..\src\lda\hist.h" />
     <ClInclude Include="..\src\lr\lr.h" />
     <ClInclude Include="..\src\lr\metric.h" />
@@ -44,10 +43,10 @@
     <ClCompile Include="..\src\common\mt19937ar.c" />
     <ClCompile Include="..\src\lda\alias-lda-sampler.cc" />
     <ClCompile Include="..\src\lda\alias.cc" />
+    <ClCompile Include="..\src\lda\hist.cc" />
     <ClCompile Include="..\src\lda\light-lda-sampler.cc" />
     <ClCompile Include="..\src\lda\sparse-lda-sampler.cc" />
-    <ClCompile Include="..\src\lda\sparse-plain-gibbs-sampler.cc" />
-    <ClCompile Include="..\src\lda\train.cc" />
+    <ClCompile Include="..\src\lda\sampler.cc" />
     <ClCompile Include="..\src\lr\lr.cc" />
     <ClCompile Include="..\src\lr\metric.cc" />
     <ClCompile Include="..\src\lr\problem.cc" />

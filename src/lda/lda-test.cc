@@ -6,7 +6,7 @@
 
 #include "common/x.h"
 #include "lda/alias.h"
-#include "lda/train.h"
+#include "lda/sampler.h"
 
 #if defined _WIN32
 #define TEST_DATA_DIR "../src/lda-test-data"
@@ -36,17 +36,18 @@ void TestAlias() {
 
 void TestYahooModel() {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
-  SparseGibbsSampler model;
+  PlainGibbsSampler model;
   model.LoadCorpus(fp, 0);
   model.K() = 3;
   model.alpha() = 0.05;
   model.beta() = 0.1;
   model.total_iteration() = 100;
+  model.hist_type() = kSparseHist;
   model.Train();
   model.SaveModel(TEST_DATA_DIR"/yahoo");
 }
 
-void TestYahooWithIdModel() {
+void TestYahooWithIdModel(int hist_tpye) {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
   PlainGibbsSampler model;
   model.LoadCorpus(fp, 1);
@@ -54,21 +55,10 @@ void TestYahooWithIdModel() {
   model.alpha() = 0.05;
   model.beta() = 0.1;
   model.total_iteration() = 100;
-  model.hp_optimze() = 1;
+  model.hp_opt() = 1;
+  model.hist_type() = hist_tpye;
   model.Train();
   model.SaveModel(TEST_DATA_DIR"/yahoo-with-id");
-}
-
-void TestYahooWithIdModel2() {
-  ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
-  SparseGibbsSampler model;
-  model.LoadCorpus(fp, 1);
-  model.K() = 3;
-  model.alpha() = 0.05;
-  model.beta() = 0.1;
-  model.total_iteration() = 100;
-  model.Train();
-  model.SaveModel(TEST_DATA_DIR"/yahoo-with-id2");
 }
 
 void Test20NewsModel() {
@@ -86,8 +76,9 @@ void Test20NewsModel() {
 int main() {
   // TestAlias();
   // TestYahooModel();
-  TestYahooWithIdModel();
-  // TestYahooWithIdModel2();
+  // TestYahooWithIdModel(kDenseHist);
+  // TestYahooWithIdModel(kArrayBufHist);
+   TestYahooWithIdModel(kSparseHist);
   // Test20NewsModel();
   return 0;
 }

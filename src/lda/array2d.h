@@ -10,61 +10,31 @@
 #include <vector>
 
 template <class T>
-class Array1D {
- private:
-  T* a_;
- public:
-  Array1D() {}
-
-  explicit Array1D(T* a) : a_(a) {}
-
-  T& operator[](int i) {
-    return a_[i];
-  }
-
-  T operator[](int i) const {
-    return a_[i];
-  }
-};
-
-template <class T>
-class ConstArray1D {
- private:
-  const T* a_;
- public:
-  ConstArray1D() {}
-
-  explicit ConstArray1D(const T* a) : a_(a) {}
-
-  T operator[](int i) {
-    return a_[i];
-  }
-
-  T operator[](int i) const {
-    return a_[i];
-  }
-};
-
-template <class T>
 class Array2D {
+ private:
+  Array2D(const Array2D& right);
+  Array2D& operator=(const Array2D& right);
+
  private:
   int d1_;
   int d2_;
-  std::vector<T> a_;
+  std::vector<T> storage_;
 
  public:
-  void resize(int d1, int d2) {
+  Array2D() : d1_(0), d2_(0) {}
+
+  void Resize(int d1, int d2, T t = 0) {
     d1_ = d1;
     d2_ = d2;
-    a_.resize(d1 * d2);
+    storage_.resize(d1 * d2, t);
   }
 
-  Array1D<T> operator[](int i) {
-    return Array1D<T>(&a_[0] + d2_ * i);
+  T* operator[](int i) {
+    return &storage_[0] + d2_ * i;
   }
 
-  ConstArray1D<T> operator[](int i) const {
-    return ConstArray1D<T>(&a_[0] + d2_ * i);
+  const T* operator[](int i) const {
+    return &storage_[0] + d2_ * i;
   }
 };
 

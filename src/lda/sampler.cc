@@ -6,7 +6,7 @@
 #include "common/mt19937ar.h"
 #include "common/mt64.h"
 #include "common/x.h"
-#include "lda/train.h"
+#include "lda/sampler.h"
 
 PlainGibbsSampler::~PlainGibbsSampler() {}
 
@@ -110,7 +110,7 @@ void PlainGibbsSampler::SaveModel(const std::string& prefix) const {
   {
     // theta_mk[m][k]: doc m's topic k' proportion
     Array2D<double> theta_mk;
-    theta_mk.resize(M_, K_);
+    theta_mk.Resize(M_, K_);
     CollectTheta(&theta_mk);
 
     filename = prefix + "-doc-topic";
@@ -128,7 +128,7 @@ void PlainGibbsSampler::SaveModel(const std::string& prefix) const {
   {
     // phi_k[k][v]: the probability that word v is assigned to topic k
     Array2D<double> phi_kv;
-    phi_kv.resize(K_, V_);
+    phi_kv.Resize(K_, V_);
     CollectPhi(&phi_kv);
 
     filename = prefix + "-topic-word";
@@ -193,21 +193,21 @@ int PlainGibbsSampler::InitializeParam() {
 }
 
 int PlainGibbsSampler::InitializeSampler() {
-  N_mk_.resize(M_, K_);
-  N_kv_.resize(K_, V_);
+  N_mk_.Init(M_, K_, hist_type_);
+  N_vk_.Init(V_, K_, hist_type_);
   topic_cdf_.resize(K_);
 
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
     Word* word = &words_[doc.index];
-    Array1D<int> N_m = N_mk_[m];
+    Hist& N_m = N_mk_[m];
 
     for (int n = 0; n < doc.N; n++, word++) {
       int v = word->v;
       int k = (int)(genrand_int32() % K_);
       word->k = k;
       N_m[k]++;
-      N_kv_[k][v]++;
+      N_vk_[v][k]++;
       N_k_[k]++;
     }
   }
@@ -220,12 +220,9 @@ void PlainGibbsSampler::UninitializeSampler() {
 void PlainGibbsSampler::CollectTheta(Array2D<double>* theta) const {
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
-    Array1D<double> theta_m = (*theta)[m];
-    ConstArray1D<int> N_m = N_mk_[m];
+    double* theta_m = (*theta)[m];
+    const Hist& N_m = N_mk_[m];
 
-    for (int k = 0; k < K_; k++) {
-      theta_m[k] = 0.0;
-    }
     for (int k = 0; k < K_; k++) {
       theta_m[k] += (N_m[k] + hp_alpha_k_[k]) / (doc.N + hp_total_alpha_);
     }
@@ -234,14 +231,10 @@ void PlainGibbsSampler::CollectTheta(Array2D<double>* theta) const {
 
 void PlainGibbsSampler::CollectPhi(Array2D<double>* phi) const {
   for (int k = 0; k < K_; k++) {
-    Array1D<double> phi_k = (*phi)[k];
-    ConstArray1D<int> N_k = N_kv_[k];
+    double* phi_k = (*phi)[k];
 
     for (int v = 0; v < V_; v++) {
-      phi_k[v] = 0.0;
-    }
-    for (int v = 0; v < V_; v++) {
-      phi_k[v] += (N_k[v] + hp_beta_) / (N_k_[k] + hp_total_beta_);
+      phi_k[v] += (N_vk_[v][k] + hp_beta_) / (N_k_[k] + hp_total_beta_);
     }
   }
 }
@@ -251,14 +244,15 @@ double PlainGibbsSampler::LogLikelyhood() const {
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
     const Word* word = &words_[doc.index];
-    ConstArray1D<int> N_m = N_mk_[m];
+    const Hist& N_m = N_mk_[m];
 
     for (int n = 0; n < doc.N; n++, word++) {
       int v = word->v;
       double word_sum = 0.0;
+      const Hist& N_v = N_vk_[v];
       for (int k = 0; k < K_; k++) {
         word_sum += (N_m[k] + hp_alpha_k_[k])
-                    * (N_kv_[k][v] + hp_beta_)
+                    * (N_v[k] + hp_beta_)
                     / (N_k_[k] + hp_total_beta_);
       }
       word_sum /= (doc.N + hp_total_alpha_);
@@ -318,26 +312,27 @@ void PlainGibbsSampler::PostSampleDocument(int m) {
 void PlainGibbsSampler::SampleDocument(int m) {
   const Doc& doc = docs_[m];
   Word* word = &words_[doc.index];
-  Array1D<int> N_m = N_mk_[m];
+  Hist& N_m = N_mk_[m];
   double talpha = doc.N - 1 + hp_total_alpha_;
 
   for (int n = 0; n < doc.N; n++, word++) {
     int v = word->v;
     int k = word->k;
+    const Hist& N_v = N_vk_[v];
 
     N_m[k]--;
-    N_kv_[k][v]--;
+    N_vk_[v][k]--;
     N_k_[k]--;
 
     topic_cdf_[0] = 0.0;
     for (k = 0; k < K_ - 1; k++) {
-      topic_cdf_[k] += (N_kv_[k][v] + hp_beta_)
+      topic_cdf_[k] += (N_v[k] + hp_beta_)
                        / (N_k_[k] + hp_total_beta_)
                        * (N_m[k] + hp_alpha_k_[k])
                        / talpha;
       topic_cdf_[k + 1] = topic_cdf_[k];
     }
-    topic_cdf_[K_ - 1] += (N_kv_[K_ - 1][v] + hp_beta_)
+    topic_cdf_[K_ - 1] += (N_v[K_ - 1] + hp_beta_)
                           / (N_k_[K_ - 1] + hp_total_beta_)
                           * (N_m[K_ - 1] + hp_alpha_k_[K_ - 1])
                           / talpha;
@@ -350,7 +345,7 @@ void PlainGibbsSampler::SampleDocument(int m) {
     }
 
     N_m[k]++;
-    N_kv_[k][v]++;
+    N_vk_[v][k]++;
     N_k_[k]++;
     word->k = k;
   }
@@ -414,7 +409,7 @@ void PlainGibbsSampler::HPOpt_OptimizeAlpha() {
 
 void PlainGibbsSampler::HPOpt_PrepareOptimizeBeta() {
   for (int m = 0; m < M_; m++) {
-    Array1D<int> N_m = N_mk_[m];
+    Hist& N_m = N_mk_[m];
     for (int k = 0; k < K_; k++) {
       int count = N_m[k];
       if (count == 0) {
@@ -468,7 +463,7 @@ void PlainGibbsSampler::HPOpt_PostSampleDocument(int m) {
 
   if (hp_opt_alpha_iteration_ > 0) {
     const Doc& doc = docs_[m];
-    Array1D<int> N_m = N_mk_[m];
+    Hist& N_m = N_mk_[m];
     for (int k = 0; k < K_; k++) {
       int count = N_m[k];
       if (count == 0) {

@@ -42,21 +42,22 @@ void TestYahooModel() {
   model.alpha() = 0.05;
   model.beta() = 0.1;
   model.total_iteration() = 100;
-  model.hist_type() = kSparseHist;
+  model.storage_type() = kSparseHist;
   model.Train();
   model.SaveModel(TEST_DATA_DIR"/yahoo");
 }
 
 void TestYahooWithIdModel(int hist_tpye) {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
-  PlainGibbsSampler model;
+  // PlainGibbsSampler model;
+  SparseLDASampler model;
   model.LoadCorpus(fp, 1);
   model.K() = 3;
   model.alpha() = 0.05;
   model.beta() = 0.1;
   model.total_iteration() = 100;
   model.hp_opt() = 1;
-  model.hist_type() = hist_tpye;
+  model.storage_type() = hist_tpye;
   model.Train();
   model.SaveModel(TEST_DATA_DIR"/yahoo-with-id");
 }
@@ -78,7 +79,7 @@ int main() {
   // TestYahooModel();
   // TestYahooWithIdModel(kDenseHist);
   // TestYahooWithIdModel(kArrayBufHist);
-   TestYahooWithIdModel(kSparseHist);
+  TestYahooWithIdModel(kSparseHist);
   // Test20NewsModel();
   return 0;
 }

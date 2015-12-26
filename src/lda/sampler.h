@@ -10,8 +10,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-#include "lda/array2d.h"
-#include "lda/hist.h"
+#include "lda/array.h"
 
 struct Doc {
   int index;  // index in "Model::words_"
@@ -34,23 +33,20 @@ class PlainGibbsSampler {
 
   // model parameters
   int K_;  // # of topics
-  // N_k: # of words assigned to topic k
-  std::vector<int> N_k_;
-  // N_mk[m][k]: # of words in doc m assigned to topic k
-  Hists N_mk_;
-  // N_kv[v][k]: # of word v assigned to topic k
-  Hists N_vk_;
-  // topic CDF for sampling
-  std::vector<double> topic_cdf_;
+  // topics_count_[k]: # of words assigned to topic k
+  IntDenseTable topics_count_;
+  // docs_topics_count_[m][k]: # of words in doc m assigned to topic k
+  IntTables docs_topics_count_;
+  // words_topics_count_[v][k]: # of word v assigned to topic k
+  IntTables words_topics_count_;
 
-  // hyper parameters
-  // alpha_k[k]: asymmetric doc-topic prior for topic k
-  std::vector<double> hp_alpha_k_;
-  // sums of alpha_k
-  double hp_total_alpha_;
+  // model hyper parameters
+  // hp_alpha_[k]: asymmetric doc-topic prior for topic k
+  std::vector<double> hp_alpha_;
+  double hp_sum_alpha_;
   // beta: symmetric topic-word prior for topic k
   double hp_beta_;
-  double hp_total_beta_;
+  double hp_sum_beta_;
 
   // hyper parameters optimizations
   int hp_opt_;
@@ -59,30 +55,33 @@ class PlainGibbsSampler {
   double hp_opt_alpha_scale_;
   int hp_opt_alpha_iteration_;
   int hp_opt_beta_iteration_;
-  // hp_opt_topic_doc_count_[k][n]:
+  // docs_topic_count_hist_[k][n]:
   // # of documents in which topic "k" occurs "n" times.
-  std::vector<std::vector<int> > hp_opt_topic_doc_count_;
-  // hp_opt_doc_len_count_[n]:
+  std::vector<std::vector<int> > docs_topic_count_hist_;
+  // doc_len_hist_[n]:
   // # of documents whose length are "n".
-  std::vector<int> hp_opt_doc_len_count_;
-  // hp_opt_word_topic_count_[n]:
+  std::vector<int> doc_len_hist_;
+  // word_topic_count_hist_[n]:
   // # of words which are assigned to a topic "n" times.
-  std::vector<int> hp_opt_word_topic_count_;
-  // hp_opt_topic_len_count_[n]:
+  std::vector<int> word_topic_count_hist_;
+  // topic_len_hist_[n]:
   // # of topics which occurs "n" times.
-  std::vector<int> hp_opt_topic_len_count_;
+  std::vector<int> topic_len_hist_;
 
   // iteration variables
   int total_iteration_;
   int burnin_iteration_;
   int log_likelyhood_interval_;
   int iteration_;
-  // a value of enum HistType
-  int hist_type_;
+  // a value of enum TableType
+  int storage_type_;
+
+  // topic CDF only for PlainGibbsSampler
+  std::vector<double> topic_cdf_;
 
  public:
   PlainGibbsSampler() : K_(0),
-    hp_total_alpha_(0.0),
+    hp_sum_alpha_(0.0),
     hp_beta_(0.0),
     hp_opt_(0),
     hp_opt_interval_(0),
@@ -93,7 +92,7 @@ class PlainGibbsSampler {
     total_iteration_(0),
     burnin_iteration_(0),
     log_likelyhood_interval_(0),
-    hist_type_(kSparseHist) {}
+    storage_type_(kSparseHist) {}
   virtual ~PlainGibbsSampler();
 
   // setters
@@ -102,7 +101,7 @@ class PlainGibbsSampler {
   }
 
   double& alpha() {
-    return hp_total_alpha_;
+    return hp_sum_alpha_;
   }
 
   double& beta() {
@@ -145,16 +144,15 @@ class PlainGibbsSampler {
     return log_likelyhood_interval_;
   }
 
-  int& hist_type() {
-    return hist_type_;
+  int& storage_type() {
+    return storage_type_;
   }
   // end of setters
 
   void LoadCorpus(FILE* fp, int with_id);
   void SaveModel(const std::string& prefix) const;
-  int InitializeParam();
+  int Initialize();
   virtual int InitializeSampler();
-  virtual void UninitializeSampler();
   virtual void CollectTheta(Array2D<double>* theta) const;
   virtual void CollectPhi(Array2D<double>* phi) const;
   virtual double LogLikelyhood() const;
@@ -179,6 +177,30 @@ class PlainGibbsSampler {
     }
     return 0;
   }
+};
+
+class SparseLDASampler : public PlainGibbsSampler {
+ private:
+  double smooth_sum_;
+  double doc_bucket_sum_;
+  double word_bucket_sum_;
+  std::vector<double> smooth_bucket_;
+  std::vector<double> doc_bucket_;
+  std::vector<double> word_bucket_;
+  std::vector<double> cache_;
+
+ public:
+  SparseLDASampler() : PlainGibbsSampler() {}
+
+  virtual int InitializeSampler();
+  virtual void PostSampleCorpus();
+  virtual void PostSampleDocument(int m);
+  virtual void SampleDocument(int m);
+  void RemoveOrAddWordTopic(int m, int v, int k, int remove);
+  int SampleDocumentWord(int m, int v);
+  void PrepareSmoothBucket();
+  void PrepareDocBucket(int m);
+  void PrepareWordBucket(int v);
 };
 
 #endif  // SRC_LDA_SAMPLER_H_

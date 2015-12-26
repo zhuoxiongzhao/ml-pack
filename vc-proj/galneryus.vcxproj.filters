@@ -45,19 +45,13 @@
     <ClInclude Include="..\src\lda\alias.h">
       <Filter>lda</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\common\mt64.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\common\mt19937ar.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lda\array2d.h">
-      <Filter>lda</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\lda\hist.h">
-      <Filter>lda</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\lda\sampler.h">
+      <Filter>lda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\array.h">
       <Filter>lda</Filter>
     </ClInclude>
   </ItemGroup>
@@ -104,23 +98,8 @@
     <ClCompile Include="..\src\lda\alias.cc">
       <Filter>lda</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\common\mt19937-64.c">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\common\mt19937ar.c">
       <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lda\alias-lda-sampler.cc">
-      <Filter>lda</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lda\light-lda-sampler.cc">
-      <Filter>lda</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lda\sparse-lda-sampler.cc">
-      <Filter>lda</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lda\hist.cc">
-      <Filter>lda</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lda\sampler.cc">
       <Filter>lda</Filter>

@@ -3,19 +3,8 @@
 //
 
 #include <queue>
-
-#include "common/mt64.h"
 #include "common/mt19937ar.h"
 #include "lda/alias.h"
-
-class RandInializer {
- public:
-  RandInializer() {
-    init_genrand64(0312);
-    init_genrand(0705);
-  }
-};
-static RandInializer rand_inializer;
 
 void Alias::Construct(const std::vector<double>& prob) {
   double prob_sum = 0.0;
@@ -74,5 +63,5 @@ void Alias::Construct(const std::vector<double>& prob, double prob_sum) {
 }
 
 int Alias::Sample() const {
-  return Sample(genrand64_real2(), genrand64_real2());
+  return Sample(genrand_real2(), genrand_real2());
 }

@@ -95,13 +95,13 @@
     <ClCompile Include="..\src\common\hash-entry.cc">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\lda\alias.cc">
-      <Filter>lda</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\common\mt19937ar.c">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lda\sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\alias.cc">
       <Filter>lda</Filter>
     </ClCompile>
   </ItemGroup>

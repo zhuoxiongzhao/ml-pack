@@ -17,7 +17,6 @@ void Alias::Construct(const std::vector<double>& prob) {
 void Alias::Construct(const std::vector<double>& prob, double prob_sum) {
   table_.resize(prob.size());
   n_ = (int)prob.size();
-  usage_ = 0;
 
   std::vector<double> normalized_prob;
   normalized_prob.reserve(n_);

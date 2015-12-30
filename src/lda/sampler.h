@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include "lda/alias.h"
 #include "lda/array.h"
 
 struct Doc {
@@ -190,7 +191,7 @@ class SparseLDASampler : public PlainGibbsSampler {
   std::vector<double> cache_;
 
  public:
-  SparseLDASampler() : PlainGibbsSampler() {}
+  SparseLDASampler() {}
 
   virtual int InitializeSampler();
   virtual void PostSampleCorpus();
@@ -201,6 +202,36 @@ class SparseLDASampler : public PlainGibbsSampler {
   void PrepareSmoothBucket();
   void PrepareDocBucket(int m);
   void PrepareWordBucket(int v);
+};
+
+class LightLDASampler : public PlainGibbsSampler {
+ private:
+  Alias hp_alpha_alias_table_;
+  std::vector<std::vector<int> > cached_words_topic_samples_;
+  int mh_step_;
+
+ public:
+  LightLDASampler() : mh_step_(0) {}
+
+  int& mh_step() {
+    return mh_step_;
+  }
+
+  virtual int InitializeSampler();
+  virtual void PostSampleCorpus();
+  virtual void SampleDocument(int m);
+  int SampleWithWord(int v);
+  double WordAcceptRate(int m,
+                        int v,
+                        int old_k,
+                        int s,
+                        int t) const;
+  int SampleWithDoc(const Doc& doc, int v);
+  double DocAcceptRate(int m,
+                       int v,
+                       int old_k,
+                       int s,
+                       int t) const;
 };
 
 #endif  // SRC_LDA_SAMPLER_H_

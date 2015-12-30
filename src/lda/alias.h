@@ -18,19 +18,14 @@ class Alias {
 
   std::vector<AliasItem> table_;
   int n_;
-  volatile int usage_;
 
  public:
   int n() const {
     return n_;
   }
 
-  int usage() const {
-    return usage_;
-  }
-
  public:
-  Alias() : n_(0), usage_(0) {}
+  Alias() : n_(0) {}
   void Construct(const std::vector<double>& prob);
   void Construct(const std::vector<double>& prob, double prob_sum);
 

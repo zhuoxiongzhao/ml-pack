@@ -50,8 +50,8 @@ void TestYahooModel() {
 void TestYahooWithIdModel(int hist_tpye) {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
   // PlainGibbsSampler model;
-   SparseLDASampler model;
-  // LightLDASampler model;
+  // SparseLDASampler model;
+  LightLDASampler model;
   model.LoadCorpus(fp, 1);
   model.K() = 3;
   model.alpha() = 0.05;

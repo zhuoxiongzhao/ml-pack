@@ -2,7 +2,6 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
-#include <queue>
 #include "common/mt19937ar.h"
 #include "lda/alias.h"
 
@@ -18,45 +17,46 @@ void Alias::Construct(const std::vector<double>& prob, double prob_sum) {
   table_.resize(prob.size());
   n_ = (int)prob.size();
 
-  std::vector<double> normalized_prob;
-  normalized_prob.reserve(n_);
+  // use cached buffers
+  normalized_prob_.resize(n_);
+  small_.resize(n_);
+  large_.resize(n_);
+
   for (int i = 0; i < n_; ++i) {
-    normalized_prob.push_back((prob[i] * n_) / prob_sum);
+    normalized_prob_[i] = (prob[i] * n_) / prob_sum;
   }
 
-  std::queue<int> small, large;
+  int small_begin = 0, small_end = 0;
+  int large_begin = 0, large_end = 0;
+
   for (int i = 0; i < n_; ++i) {
-    if (normalized_prob[i] < 1.0) {
-      small.push(i);
+    if (normalized_prob_[i] < 1.0) {
+      small_[small_end++] = i;
     } else {
-      large.push(i);
+      large_[large_end++] = i;
     }
   }
 
-  while (!(small.empty() || large.empty())) {
-    int l = small.front();
-    small.pop();
-    int g = large.front();
-    large.pop();
-    table_[l].prob = normalized_prob[l];
+  while (small_begin != small_end && large_begin != large_end) {
+    const int l = small_[small_begin++];
+    const int g = large_[large_begin++];
+    table_[l].prob = normalized_prob_[l];
     table_[l].index = g;
-    normalized_prob[g] = (normalized_prob[g] + normalized_prob[l]) - 1;
-    if (normalized_prob[g] < 1.0) {
-      small.push(g);
+    normalized_prob_[g] = (normalized_prob_[g] + normalized_prob_[l]) - 1;
+    if (normalized_prob_[g] < 1.0) {
+      small_[small_end++] = g;
     } else {
-      large.push(g);
+      large_[large_end++] = g;
     }
   }
 
-  while (!large.empty()) {
-    int g = large.front();
-    large.pop();
+  while (large_begin != large_end) {
+    const int g = large_[large_begin++];
     table_[g].prob = 1.0;
   }
 
-  while (!small.empty()) {
-    int l = small.front();
-    small.pop();
+  while (small_begin != small_end) {
+    const int l = small_[small_begin++];
     table_[l].prob = 1.0;
   }
 }

@@ -207,6 +207,8 @@ class SparseLDASampler : public PlainGibbsSampler {
 class LightLDASampler : public PlainGibbsSampler {
  private:
   Alias hp_alpha_alias_table_;
+  Alias word_alias_table_;
+  std::vector<double> word_topics_prob_;
   std::vector<std::vector<int> > cached_words_topic_samples_;
   int mh_step_;
 

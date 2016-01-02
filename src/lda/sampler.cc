@@ -744,27 +744,27 @@ int LightLDASampler::SampleWithWord(int v) {
   // word-proposal: (N_vk + beta)/(N_k + sum_beta)
   std::vector<int>& word_v_topic_samples_ = cached_words_topic_samples_[v];
   if (word_v_topic_samples_.empty()) {
-    std::vector<double> prob(K_, 0.0);
+    word_topics_prob_.assign(K_, 0.0);
     const IntTable& word_v_topics_count = words_topics_count_[v];
     IntTable::const_iterator first = word_v_topics_count.begin();
     IntTable::const_iterator last = word_v_topics_count.end();
     for (; first != last; ++first) {
       const int k = first.id();
-      prob[k] = (first.count() + hp_beta_) / (topics_count_[k] + hp_sum_beta_);
+      word_topics_prob_[k] =
+        (first.count() + hp_beta_) / (topics_count_[k] + hp_sum_beta_);
     }
 
     for (int k = 0; k < K_; k++) {
-      double& prob_k = prob[k];
+      double& prob_k = word_topics_prob_[k];
       if (prob_k == 0.0) {
         prob_k = hp_beta_ / (topics_count_[k] + hp_sum_beta_);
       }
     }
 
-    Alias alias;
-    alias.Construct(prob);
+    word_alias_table_.Construct(word_topics_prob_);
     word_v_topic_samples_.reserve(K_);
     for (int k = 0; k < K_; k++) {
-      word_v_topic_samples_.push_back(alias.Sample());
+      word_v_topic_samples_.push_back(word_alias_table_.Sample());
     }
   }
 
@@ -824,9 +824,19 @@ int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
   double sum = hp_sum_alpha_ + doc.N;
   double sample = genrand_real2() * sum;
   if (sample < hp_sum_alpha_) {
-    return hp_alpha_alias_table_.Sample();
+    return hp_alpha_alias_table_.Sample(
+             sample / hp_sum_alpha_,
+             genrand_real2());
   } else {
-    return words_[doc.index + (int)(genrand_int32() % doc.N)].k;
+    int offset = (int)(sample - hp_sum_alpha_);
+    int index;
+    if (offset != doc.N) {
+      index = doc.index + offset;
+    } else {
+      // rare numerical errors may lie in this branch
+      index = doc.index + offset - 1;
+    }
+    return words_[index].k;
   }
 }
 

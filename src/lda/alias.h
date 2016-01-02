@@ -18,6 +18,10 @@ class Alias {
 
   std::vector<AliasItem> table_;
   int n_;
+  // Cached buffer, they don't need to be member variables.
+  std::vector<double> normalized_prob_;
+  std::vector<int> small_;
+  std::vector<int> large_;
 
  public:
   int n() const {

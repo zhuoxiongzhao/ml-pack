@@ -34,53 +34,37 @@ void TestAlias() {
   }
 }
 
-void TestYahooModel() {
-  ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
-  PlainGibbsSampler model;
+void TestSimple() {
+  ScopedFile fp(TEST_DATA_DIR"/simple-train", ScopedFile::Read);
+  LightLDASampler model;
   model.LoadCorpus(fp, 0);
-  model.K() = 3;
-  model.alpha() = 0.05;
+  model.K() = 2;
+  model.alpha() = 0.1;
   model.beta() = 0.1;
   model.total_iteration() = 100;
+  model.hp_opt() = 0;
+  model.storage_type() = kSparseHist;
+  model.Train();
+  model.SaveModel(TEST_DATA_DIR"/simple");
+}
+
+void TestYahoo() {
+  ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
+  SparseLDASampler model;
+  model.LoadCorpus(fp, 1);
+  model.K() = 3;
+  model.alpha() = 0.1;
+  model.beta() = 0.1;
+  model.total_iteration() = 100;
+  model.hp_opt() = 0;
   model.storage_type() = kSparseHist;
   model.Train();
   model.SaveModel(TEST_DATA_DIR"/yahoo");
 }
 
-void TestYahooWithIdModel(int hist_tpye) {
-  ScopedFile fp(TEST_DATA_DIR"/yahoo-with-id-train", ScopedFile::Read);
-  // PlainGibbsSampler model;
-  // SparseLDASampler model;
-  LightLDASampler model;
-  model.LoadCorpus(fp, 1);
-  model.K() = 3;
-  model.alpha() = 0.05;
-  model.beta() = 0.1;
-  model.total_iteration() = 100;
-  model.hp_opt() = 1;
-  model.storage_type() = hist_tpye;
-  model.Train();
-  model.SaveModel(TEST_DATA_DIR"/yahoo-with-id");
-}
-
-void Test20NewsModel() {
-  ScopedFile fp(TEST_DATA_DIR"/20news-train", ScopedFile::Read);
-  PlainGibbsSampler model;
-  model.LoadCorpus(fp, 0);
-  model.K() = 20;
-  model.alpha() = 0.05;
-  model.beta() = 0.1;
-  model.total_iteration() = 200;
-  model.Train();
-  model.SaveModel(TEST_DATA_DIR"/20news");
-}
-
 int main() {
   // TestAlias();
-  // TestYahooModel();
-  // TestYahooWithIdModel(kDenseHist);
-  // TestYahooWithIdModel(kArrayBufHist);
-  TestYahooWithIdModel(kSparseHist);
-  // Test20NewsModel();
+  TestSimple();
+  TestYahoo();
   return 0;
 }

@@ -15,7 +15,7 @@ class RandInializer {
     init_genrand(0705);
   }
 };
-static RandInializer rand_inializer;  // TODO(yafei) wrap it
+static RandInializer rand_inializer;
 }
 
 /************************************************************************/
@@ -210,7 +210,7 @@ int PlainGibbsSampler::Initialize() {
     burnin_iteration_ = 10;
   }
   if (log_likelyhood_interval_ == 0) {
-    log_likelyhood_interval_ = total_iteration_ / 10;
+    log_likelyhood_interval_ = 10;
   }
   iteration_ = 1;
 
@@ -232,6 +232,8 @@ int PlainGibbsSampler::Initialize() {
       ++words_topics_count_[v][new_topic];
     }
   }
+
+  Log("LogLikelyhood=%lg\n", LogLikelyhood());
   return 0;
 }
 
@@ -334,7 +336,6 @@ void PlainGibbsSampler::SampleDocument(int m) {
   const Doc& doc = docs_[m];
   Word* word = &words_[doc.index];
   IntTable& doc_m_topics_count = docs_topics_count_[m];
-  double talpha = doc.N - 1 + hp_sum_alpha_;
 
   for (int n = 0; n < doc.N; n++, word++) {
     const int v = word->v;
@@ -349,14 +350,12 @@ void PlainGibbsSampler::SampleDocument(int m) {
     for (int k = 0; k < K_ - 1; k++) {
       topic_cdf_[k] += (word_v_topics_count[k] + hp_beta_)
                        / (topics_count_[k] + hp_sum_beta_)
-                       * (doc_m_topics_count[k] + hp_alpha_[k])
-                       / talpha;
+                       * (doc_m_topics_count[k] + hp_alpha_[k]);
       topic_cdf_[k + 1] = topic_cdf_[k];
     }
     topic_cdf_[K_ - 1] += (word_v_topics_count[K_ - 1] + hp_beta_)
                           / (topics_count_[K_ - 1] + hp_sum_beta_)
-                          * (doc_m_topics_count[K_ - 1] + hp_alpha_[K_ - 1])
-                          / talpha;
+                          * (doc_m_topics_count[K_ - 1] + hp_alpha_[K_ - 1]);
 
     double r = genrand_real2() * topic_cdf_[K_ - 1];
     int new_k = -1;
@@ -602,7 +601,7 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
     for (; first != last; ++first) {
       const int k = first.id();
       sample -= word_bucket_[k];
-      if (sample <= 0) {
+      if (sample <= 0.0) {
         break;
       }
     }
@@ -617,7 +616,7 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
       for (; first != last; ++first) {
         const int k = first.id();
         sample -= doc_bucket_[k];
-        if (sample <= 0) {
+        if (sample <= 0.0) {
           break;
         }
       }
@@ -628,13 +627,14 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
       int k;
       for (k = 0; k < K_; k++) {
         sample -= smooth_bucket_[k];
-        if (sample <= 0) {
+        if (sample <= 0.0) {
           break;
         }
       }
       new_k = k;
     }
   }
+
   return new_k;
 }
 
@@ -723,6 +723,7 @@ void LightLDASampler::SampleDocument(int m) {
         word->k = new_k;
         current_k = new_k;
       }
+
       new_k = SampleWithDoc(doc, v);
       if (new_k != current_k &&
           genrand_real2() < DocAcceptRate(m, v, old_k, current_k, new_k)) {
@@ -731,12 +732,14 @@ void LightLDASampler::SampleDocument(int m) {
       }
     }
 
-    --topics_count_[old_k];
-    --doc_m_topics_count[old_k];
-    --word_v_topics_count[old_k];
-    ++topics_count_[current_k];
-    ++doc_m_topics_count[current_k];
-    ++word_v_topics_count[current_k];
+    if (old_k != current_k) {
+      --topics_count_[old_k];
+      --doc_m_topics_count[old_k];
+      --word_v_topics_count[old_k];
+      ++topics_count_[current_k];
+      ++doc_m_topics_count[current_k];
+      ++word_v_topics_count[current_k];
+    }
   }
 }
 
@@ -762,8 +765,9 @@ int LightLDASampler::SampleWithWord(int v) {
     }
 
     word_alias_table_.Construct(word_topics_prob_);
-    word_v_topic_samples_.reserve(K_);
-    for (int k = 0; k < K_; k++) {
+    int cached_samples = K_ * mh_step_;
+    word_v_topic_samples_.reserve(cached_samples);
+    for (int i = 0; i < cached_samples; i++) {
       word_v_topic_samples_.push_back(word_alias_table_.Sample());
     }
   }
@@ -778,73 +782,6 @@ double LightLDASampler::WordAcceptRate(int m,
                                        int old_k,
                                        int s,
                                        int t) const {
-  // accept rate from topic s to topic t is:
-  // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)(N^{-mn}_s + \sum\beta)
-  // ----------------------------------------------------------------------
-  // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)(N^{-mn}_t + \sum\beta)
-  // *
-  // (N_{ms} + \alpha_s)
-  // -------------------
-  // (N_{mt} + \alpha_t)
-  const IntTable& doc_m_topics_count = docs_topics_count_[m];
-  const IntTable& word_v_topics_count = words_topics_count_[v];
-  int N_ms = doc_m_topics_count[s];
-  int N_mt = doc_m_topics_count[t];
-  int N_vs = word_v_topics_count[s];
-  int N_vt = word_v_topics_count[t];
-  int N_s = topics_count_[s];
-  int N_t = topics_count_[t];
-  const double hp_alpha_s = hp_alpha_[s];
-  const double hp_alpha_t = hp_alpha_[t];
-
-  // part 4
-  double rate = (N_ms + hp_alpha_s) / (N_mt + hp_alpha_t);
-
-  // NOTE that: s != t
-  if (old_k == s) {
-    N_ms--;
-    N_vs--;
-    N_s--;
-  } else if (old_k == t) {
-    N_mt--;
-    N_vt--;
-    N_t--;
-  }
-
-  // part 1, 2, 3
-  rate *=
-    (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
-    * (N_vt + hp_beta_) / (N_vs + hp_beta_)
-    * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
-  return rate < 1 ? rate : 1;
-}
-
-int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
-  // doc-proposal: N_mk + alpha_k
-  double sum = hp_sum_alpha_ + doc.N;
-  double sample = genrand_real2() * sum;
-  if (sample < hp_sum_alpha_) {
-    return hp_alpha_alias_table_.Sample(
-             sample / hp_sum_alpha_,
-             genrand_real2());
-  } else {
-    int offset = (int)(sample - hp_sum_alpha_);
-    int index;
-    if (offset != doc.N) {
-      index = doc.index + offset;
-    } else {
-      // rare numerical errors may lie in this branch
-      index = doc.index + offset - 1;
-    }
-    return words_[index].k;
-  }
-}
-
-double LightLDASampler::DocAcceptRate(int m,
-                                      int v,
-                                      int old_k,
-                                      int s,
-                                      int t) const {
   // accept rate from topic s to topic t is:
   // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)(N^{-mn}_s + \sum\beta)
   // ----------------------------------------------------------------------
@@ -884,5 +821,74 @@ double LightLDASampler::DocAcceptRate(int m,
     (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
     * (N_vt + hp_beta_) / (N_vs + hp_beta_)
     * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
-  return rate < 1 ? rate : 1;
+  // return rate < 1 ? rate : 1;
+  return rate;
+}
+
+int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
+  // doc-proposal: N_mk + alpha_k
+  double sum = hp_sum_alpha_ + doc.N;
+  double sample = genrand_real2() * sum;
+  if (sample < hp_sum_alpha_) {
+    return hp_alpha_alias_table_.Sample(
+             sample / hp_sum_alpha_,
+             genrand_real2());
+  } else {
+    int offset = (int)(sample - hp_sum_alpha_);
+    int index;
+    if (offset != doc.N) {
+      index = doc.index + offset;
+    } else {
+      // rare numerical errors may lie in this branch
+      index = doc.index + offset - 1;
+    }
+    return words_[index].k;
+  }
+}
+
+double LightLDASampler::DocAcceptRate(int m,
+                                      int v,
+                                      int old_k,
+                                      int s,
+                                      int t) const {
+  // accept rate from topic s to topic t is:
+  // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)(N^{-mn}_s + \sum\beta)
+  // ----------------------------------------------------------------------
+  // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)(N^{-mn}_t + \sum\beta)
+  // *
+  // (N_{ms} + \alpha_s)
+  // -------------------
+  // (N_{mt} + \alpha_t)
+  const IntTable& doc_m_topics_count = docs_topics_count_[m];
+  const IntTable& word_v_topics_count = words_topics_count_[v];
+  int N_ms = doc_m_topics_count[s];
+  int N_mt = doc_m_topics_count[t];
+  int N_vs = word_v_topics_count[s];
+  int N_vt = word_v_topics_count[t];
+  int N_s = topics_count_[s];
+  int N_t = topics_count_[t];
+  const double hp_alpha_s = hp_alpha_[s];
+  const double hp_alpha_t = hp_alpha_[t];
+
+  // part 4
+  double rate = (N_ms + hp_alpha_s) / (N_mt + hp_alpha_t);
+
+  // NOTE that: s != t
+  if (old_k == s) {
+    N_ms--;
+    N_vs--;
+    N_s--;
+  } else if (old_k == t) {
+    N_mt--;
+    N_vt--;
+    N_t--;
+  }
+
+  // part 1, 2, 3
+  rate *=
+    (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
+    * (N_vt + hp_beta_) / (N_vs + hp_beta_)
+    * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
+  // return rate < 1 ? rate : 1;
+  return rate;
 }

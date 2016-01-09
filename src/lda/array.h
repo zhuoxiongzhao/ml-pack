@@ -88,8 +88,15 @@ class DenseTable : public ITable<T> {
     return storage_[id];
   }
   virtual int NextNonZeroCountIndex(int id) const {
+    int size = Size();
+    if (id >= size) {
+      return size;
+    }
     while (storage_[id] == 0) {
       id++;
+      if (id >= size) {
+        return size;
+      }
     }
     return id;
   }
@@ -164,8 +171,15 @@ class ArrayBufTable : public ITable<T> {
     return storage_[id];
   }
   virtual int NextNonZeroCountIndex(int id) const {
+    if (id >= size_) {
+      return size_;
+    }
+
     while (storage_[id] == 0) {
       id++;
+      if (id >= size_) {
+        return size_;
+      }
     }
     return id;
   }

@@ -16,21 +16,23 @@
 
 void TestAlias() {
   std::vector<double> prob;
-  prob.push_back(1.0);
-  prob.push_back(2.0);
-  prob.push_back(3.0);
-  prob.push_back(4.0);
-  prob.push_back(5.0);
+  prob.push_back(0.01);
+  prob.push_back(0.07);
+  prob.push_back(0.13);
+  prob.push_back(0.29);
+  prob.push_back(0.45);
+  prob.push_back(0.05);
 
   Alias alias;
   alias.Construct(prob);
 
   std::vector<int> count(alias.n());
-  for (int i = 0; i < 10000; i++) {
+  const int N = 10000;
+  for (int i = 0; i < N; i++) {
     count[alias.Sample()]++;
   }
   for (int i = 0; i < alias.n(); i++) {
-    printf("%d\n", count[i]);
+    printf("%lf\n", count[i] / (double)N);
   }
 }
 
@@ -50,11 +52,15 @@ void TestSimple() {
 
 void TestYahoo() {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
-  SparseLDASampler model;
+  // PlainGibbsSampler model;
+  // SparseLDASampler model;
+  LightLDASampler model;
   model.LoadCorpus(fp, 1);
   model.K() = 3;
   model.alpha() = 0.1;
   model.beta() = 0.1;
+  model.burnin_iteration() = 0;
+  model.log_likelyhood_interval() = 1;
   model.total_iteration() = 100;
   model.hp_opt() = 0;
   model.storage_type() = kSparseHist;
@@ -64,7 +70,7 @@ void TestYahoo() {
 
 int main() {
   // TestAlias();
-  TestSimple();
+  // TestSimple();
   TestYahoo();
   return 0;
 }

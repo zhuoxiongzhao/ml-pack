@@ -223,17 +223,7 @@ class LightLDASampler : public PlainGibbsSampler {
   virtual void PostSampleCorpus();
   virtual void SampleDocument(int m);
   int SampleWithWord(int v);
-  double WordAcceptRate(int m,
-                        int v,
-                        int old_k,
-                        int s,
-                        int t) const;
   int SampleWithDoc(const Doc& doc, int v);
-  double DocAcceptRate(int m,
-                       int v,
-                       int old_k,
-                       int s,
-                       int t) const;
 };
 
 #endif  // SRC_LDA_SAMPLER_H_

@@ -224,7 +224,7 @@ int PlainGibbsSampler::Initialize() {
   }
 
   const double llh = LogLikelyhood();
-  Log("LogLikelyhood=%lg / %lg\n", llh, llh / words_.size());
+  Log("LogLikelyhood(total/word)=%lg/%lg\n", llh, llh / words_.size());
   return 0;
 }
 
@@ -305,7 +305,7 @@ void PlainGibbsSampler::PostSampleCorpus() {
   if (iteration_ > burnin_iteration_
       && iteration_ % log_likelyhood_interval_ == 0) {
     const double llh = LogLikelyhood();
-    Log("LogLikelyhood=%lg / %lg\n", llh, llh / words_.size());
+    Log("LogLikelyhood(total/word)=%lg/%lg\n", llh, llh / words_.size());
   }
 }
 
@@ -703,34 +703,124 @@ void LightLDASampler::SampleDocument(int m) {
 
   for (int n = 0; n < doc.N; n++, word++) {
     const int v = word->v;
-    const int old_k = word->k;
     IntTable& word_v_topics_count = words_topics_count_[v];
-    int current_k = word->k;
-    int new_k = word->k;
+    const int old_k = word->k;
+    int s = word->k;
+    int t;
+    int N_ms;
+    int N_mt;
+    int N_vs;
+    int N_vt;
+    int N_s;
+    int N_t;
+    double hp_alpha_s;
+    double hp_alpha_t;
+    double accept_rate;
 
     for (int step = 0; step < mh_step_; step++) {
-      new_k = SampleWithWord(v);
-      if (new_k != current_k &&
-          Rand::Double01() < WordAcceptRate(m, v, old_k, current_k, new_k)) {
-        word->k = new_k;
-        current_k = new_k;
+      // sample new topic from word proposal
+      t = SampleWithWord(v);
+
+      if (s != t) {
+        // calculate accept rate from topic s to topic t:
+        // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)
+        // -----------------------------------------------
+        // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)
+        // *
+        // (N^{-mn}_s + \sum\beta)
+        // -----------------------
+        // (N^{-mn}_t + \sum\beta)
+        // *
+        // (N_{vs} + \beta)(N_t + \sum\beta)
+        // ---------------------------------
+        // (N_{vt} + \beta)(N_s + \sum\beta)
+        N_ms = doc_m_topics_count[s];
+        N_mt = doc_m_topics_count[t];
+        N_vs = word_v_topics_count[s];
+        N_vt = word_v_topics_count[t];
+        N_s = topics_count_[s];
+        N_t = topics_count_[t];
+        hp_alpha_s = hp_alpha_[s];
+        hp_alpha_t = hp_alpha_[t];
+        // part 4, 5
+        accept_rate = (N_vs + hp_beta_) / (N_vt + hp_beta_)
+                      * (N_t + hp_sum_beta_) / (N_s + hp_sum_beta_);
+        // NOTE that: s != t
+        if (old_k == s) {
+          N_ms--;
+          N_vs--;
+          N_s--;
+        } else if (old_k == t) {
+          N_mt--;
+          N_vt--;
+          N_t--;
+        }
+        // part 1, 2, 3
+        accept_rate *=
+          (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
+          * (N_vt + hp_beta_) / (N_vs + hp_beta_)
+          * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
+
+        if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
+          word->k = t;
+          s = t;
+        }
       }
 
-      new_k = SampleWithDoc(doc, v);
-      if (new_k != current_k &&
-          Rand::Double01() < DocAcceptRate(m, v, old_k, current_k, new_k)) {
-        word->k = new_k;
-        current_k = new_k;
+      t = SampleWithDoc(doc, v);
+      if (s != t) {
+        // calculate accept rate from topic s to topic t:
+        // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)
+        // -----------------------------------------------
+        // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)
+        // *
+        // (N^{-mn}_s + \sum\beta)
+        // -----------------------
+        // (N^{-mn}_t + \sum\beta)
+        // *
+        // (N_{ms} + \alpha_s)
+        // -------------------
+        // (N_{mt} + \alpha_t)
+        N_ms = doc_m_topics_count[s];
+        N_mt = doc_m_topics_count[t];
+        N_vs = word_v_topics_count[s];
+        N_vt = word_v_topics_count[t];
+        N_s = topics_count_[s];
+        N_t = topics_count_[t];
+        hp_alpha_s = hp_alpha_[s];
+        hp_alpha_t = hp_alpha_[t];
+        // part 4
+        accept_rate = (N_ms + hp_alpha_s) / (N_mt + hp_alpha_t);
+        // NOTE that: s != t
+        if (old_k == s) {
+          N_ms--;
+          N_vs--;
+          N_s--;
+        } else if (old_k == t) {
+          N_mt--;
+          N_vt--;
+          N_t--;
+        }
+        // part 1, 2, 3
+        accept_rate *=
+          (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
+          * (N_vt + hp_beta_) / (N_vs + hp_beta_)
+          * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
+
+        if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
+          word->k = t;
+          s = t;
+        }
       }
     }
 
-    if (old_k != current_k) {
+    if (old_k != s) {
       --topics_count_[old_k];
       --doc_m_topics_count[old_k];
       --word_v_topics_count[old_k];
-      ++topics_count_[current_k];
-      ++doc_m_topics_count[current_k];
-      ++word_v_topics_count[current_k];
+      ++topics_count_[s];
+      ++doc_m_topics_count[s];
+      ++word_v_topics_count[s];
     }
   }
 }
@@ -769,54 +859,6 @@ int LightLDASampler::SampleWithWord(int v) {
   return new_k;
 }
 
-double LightLDASampler::WordAcceptRate(int m,
-                                       int v,
-                                       int old_k,
-                                       int s,
-                                       int t) const {
-  // accept rate from topic s to topic t is:
-  // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)(N^{-mn}_s + \sum\beta)
-  // ----------------------------------------------------------------------
-  // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)(N^{-mn}_t + \sum\beta)
-  // *
-  // (N_{vs} + \beta)(N_t + \sum\beta)
-  // ---------------------------------
-  // (N_{vt} + \beta)(N_s + \sum\beta)
-  const IntTable& doc_m_topics_count = docs_topics_count_[m];
-  const IntTable& word_v_topics_count = words_topics_count_[v];
-  int N_ms = doc_m_topics_count[s];
-  int N_mt = doc_m_topics_count[t];
-  int N_vs = word_v_topics_count[s];
-  int N_vt = word_v_topics_count[t];
-  int N_s = topics_count_[s];
-  int N_t = topics_count_[t];
-  const double hp_alpha_s = hp_alpha_[s];
-  const double hp_alpha_t = hp_alpha_[t];
-
-  // part 4, 5
-  double rate = (N_vs + hp_beta_) / (N_vt + hp_beta_)
-                * (N_t + hp_sum_beta_) / (N_s + hp_sum_beta_);
-
-  // NOTE that: s != t
-  if (old_k == s) {
-    N_ms--;
-    N_vs--;
-    N_s--;
-  } else if (old_k == t) {
-    N_mt--;
-    N_vt--;
-    N_t--;
-  }
-
-  // part 1, 2, 3
-  rate *=
-    (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
-    * (N_vt + hp_beta_) / (N_vs + hp_beta_)
-    * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
-  // return rate < 1 ? rate : 1;
-  return rate;
-}
-
 int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
   // doc-proposal: N_mk + alpha_k
   double sum = hp_sum_alpha_ + doc.N;
@@ -836,51 +878,4 @@ int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
     }
     return words_[index].k;
   }
-}
-
-double LightLDASampler::DocAcceptRate(int m,
-                                      int v,
-                                      int old_k,
-                                      int s,
-                                      int t) const {
-  // accept rate from topic s to topic t is:
-  // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)(N^{-mn}_s + \sum\beta)
-  // ----------------------------------------------------------------------
-  // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)(N^{-mn}_t + \sum\beta)
-  // *
-  // (N_{ms} + \alpha_s)
-  // -------------------
-  // (N_{mt} + \alpha_t)
-  const IntTable& doc_m_topics_count = docs_topics_count_[m];
-  const IntTable& word_v_topics_count = words_topics_count_[v];
-  int N_ms = doc_m_topics_count[s];
-  int N_mt = doc_m_topics_count[t];
-  int N_vs = word_v_topics_count[s];
-  int N_vt = word_v_topics_count[t];
-  int N_s = topics_count_[s];
-  int N_t = topics_count_[t];
-  const double hp_alpha_s = hp_alpha_[s];
-  const double hp_alpha_t = hp_alpha_[t];
-
-  // part 4
-  double rate = (N_ms + hp_alpha_s) / (N_mt + hp_alpha_t);
-
-  // NOTE that: s != t
-  if (old_k == s) {
-    N_ms--;
-    N_vs--;
-    N_s--;
-  } else if (old_k == t) {
-    N_mt--;
-    N_vt--;
-    N_t--;
-  }
-
-  // part 1, 2, 3
-  rate *=
-    (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
-    * (N_vt + hp_beta_) / (N_vs + hp_beta_)
-    * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
-  // return rate < 1 ? rate : 1;
-  return rate;
 }

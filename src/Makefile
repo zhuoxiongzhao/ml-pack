@@ -31,7 +31,9 @@ common/hash-entry.o \
 common/hash-function.o \
 common/lbfgs.o \
 common/mt19937ar.o \
+common/mt19937-64.o \
 lda/alias.o \
+lda/rand.o \
 lda/sampler.o \
 lr/lr.o \
 lr/metric.o \

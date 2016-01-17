@@ -3,6 +3,8 @@
 #
 # Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 #
+# visualize doc: top-topic results
+#
 
 
 import sys

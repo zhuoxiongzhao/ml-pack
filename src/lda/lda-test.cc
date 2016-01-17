@@ -52,10 +52,9 @@ void TestSimple() {
 
 void TestYahoo() {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
-  // PlainGibbsSampler model;
-  // SparseLDASampler model;
   LightLDASampler model;
-  model.LoadCorpus(fp, 1);
+  model.mh_step() = 16;
+  model.LoadCorpus(fp, 0);
   model.K() = 3;
   model.alpha() = 0.1;
   model.beta() = 0.1;
@@ -68,9 +67,27 @@ void TestYahoo() {
   model.SaveModel(TEST_DATA_DIR"/yahoo");
 }
 
+void TestNIPS() {
+  ScopedFile fp(TEST_DATA_DIR"/nips-train", ScopedFile::Read);
+  LightLDASampler model;
+  model.mh_step() = 8;
+  model.LoadCorpus(fp, 0);
+  model.K() = 50;
+  model.alpha() = 0.1;
+  model.beta() = 0.1;
+  model.burnin_iteration() = 0;
+  model.log_likelyhood_interval() = 1;
+  model.total_iteration() = 200;
+  model.hp_opt() = 0;
+  model.storage_type() = kSparseHist;
+  model.Train();
+  model.SaveModel(TEST_DATA_DIR"/nips");
+}
+
 int main() {
   // TestAlias();
   // TestSimple();
   TestYahoo();
+  // TestNIPS();
   return 0;
 }

@@ -3,6 +3,9 @@
 #
 # Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 #
+# generate yahoo training corpus
+#
+
 
 import os
 import random
@@ -50,8 +53,8 @@ def collect_files(file_list, _dir):
 
 if __name__ == '__main__':
     if len(sys.argv) <= 3:
-        print >> sys.stderr, '%s [stop word file] [output name] '' \
-        ''[doc file] ...' % sys.argv[0]
+        print >> sys.stderr, '%s [stop word file] [output name] ' \
+                             '[doc file] ...' % sys.argv[0]
         sys.exit(1)
 
     file_list = []
@@ -66,7 +69,7 @@ if __name__ == '__main__':
     for filename in file_list:
         article = stem_file(filename, vocab, stop_word)
         articles.append(article)
-    random.shuffle(articles)
+    # random.shuffle(articles)
 
     vocab.sort()
     vocab.save(sys.argv[2] + '-vocab')

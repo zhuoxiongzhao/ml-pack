@@ -91,7 +91,7 @@ class PlainGibbsSampler {
     hp_opt_alpha_iteration_(0),
     hp_opt_beta_iteration_(0),
     total_iteration_(0),
-    burnin_iteration_(0),
+    burnin_iteration_(-1),
     log_likelyhood_interval_(0),
     storage_type_(kSparseHist) {}
   virtual ~PlainGibbsSampler();

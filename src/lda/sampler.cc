@@ -15,7 +15,7 @@ class RandInializer {
     init_genrand(0705);
   }
 };
-static RandInializer rand_inializer;
+static RandInializer rand_inializer;  // TODO(yafei)
 }
 
 /************************************************************************/
@@ -206,7 +206,7 @@ int PlainGibbsSampler::Initialize() {
   if (total_iteration_ == 0) {
     total_iteration_ = 50;
   }
-  if (burnin_iteration_ == 0) {
+  if (burnin_iteration_ == -1) {
     burnin_iteration_ = 10;
   }
   if (log_likelyhood_interval_ == 0) {
@@ -233,7 +233,8 @@ int PlainGibbsSampler::Initialize() {
     }
   }
 
-  Log("LogLikelyhood=%lg\n", LogLikelyhood());
+  const double llh = LogLikelyhood();
+  Log("LogLikelyhood=%lg / %lg\n", llh, llh / words_.size());
   return 0;
 }
 
@@ -313,7 +314,8 @@ void PlainGibbsSampler::PostSampleCorpus() {
   HPOpt_Optimize();
   if (iteration_ > burnin_iteration_
       && iteration_ % log_likelyhood_interval_ == 0) {
-    Log("LogLikelyhood=%lg\n", LogLikelyhood());
+    const double llh = LogLikelyhood();
+    Log("LogLikelyhood=%lg / %lg\n", llh, llh / words_.size());
   }
 }
 

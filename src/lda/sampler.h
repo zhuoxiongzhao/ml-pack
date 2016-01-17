@@ -220,13 +220,25 @@ class LightLDASampler : public PlainGibbsSampler {
   std::vector<double> word_topics_prob_;
   std::vector<std::vector<int> > cached_words_topic_samples_;
   int mh_step_;
+  int enable_word_proposal_;
+  int enable_doc_proposal_;
 
  public:
-  LightLDASampler() : mh_step_(0) {}
+  LightLDASampler() : mh_step_(0),
+    enable_word_proposal_(1),
+    enable_doc_proposal_(1) {}
 
   // setters
   int& mh_step() {
     return mh_step_;
+  }
+
+  int& enable_word_proposal() {
+    return enable_word_proposal_;
+  }
+
+  int& enable_doc_proposal() {
+    return enable_doc_proposal_;
   }
   // end of setters
 

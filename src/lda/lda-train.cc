@@ -30,7 +30,11 @@ int total_iteration = 200;
 int burnin_iteration = 10;
 int log_likelihood_interval = 10;
 int storage_type = kSparseHist;
+
+// LightLDASampler options
 int mh_step = 8;
+int enable_word_proposal = 1;
+int enable_doc_proposal = 1;
 
 void Usage() {
   fprintf(stderr,
@@ -89,7 +93,13 @@ void Usage() {
           "      Storage type. 1, dense; 2, array; 3, sparse.\n"
           "      Default is \"%d\".\n"
           "    -mh_step MH_STEP\n"
-          "      Number of MH steps, which is only for lightlda.\n"
+          "      Number of MH steps(lightlda).\n"
+          "      Default is \"%d\".\n"
+          "    -enable_word_proposal 0/1\n"
+          "      Enable word proposal(lightlda).\n"
+          "      Default is \"%d\".\n"
+          "    -enable_doc_proposal 0/1\n"
+          "      Enable doc proposal(lightlda).\n"
           "      Default is \"%d\".\n",
           doc_with_id,
           sampler.c_str(),
@@ -106,7 +116,9 @@ void Usage() {
           burnin_iteration,
           log_likelihood_interval,
           storage_type,
-          mh_step);
+          mh_step,
+          enable_word_proposal,
+          enable_doc_proposal);
   exit(1);
 }
 
@@ -134,7 +146,7 @@ int main(int argc, char** argv) {
       CHECK_MISSING_ARG(argc, argv, i, Usage());
       sampler = argv[i + 1];
       COMSUME_2_ARG(argc, argv, i);
-    } else if (s == "-topic") {
+    } else if (s == "-K") {
       CHECK_MISSING_ARG(argc, argv, i, Usage());
       K = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
@@ -190,6 +202,14 @@ int main(int argc, char** argv) {
       CHECK_MISSING_ARG(argc, argv, i, Usage());
       mh_step = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-enable_word_proposal") {
+      CHECK_MISSING_ARG(argc, argv, i, Usage());
+      enable_word_proposal = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
+    } else if (s == "-enable_doc_proposal") {
+      CHECK_MISSING_ARG(argc, argv, i, Usage());
+      enable_doc_proposal = xatoi(argv[i + 1]);
+      COMSUME_2_ARG(argc, argv, i);
     } else {
       i++;
     }
@@ -229,6 +249,9 @@ int main(int argc, char** argv) {
   LOCAL_CHECK(log_likelihood_interval >= 0);
   LOCAL_CHECK(storage_type >= 1 && storage_type <= 3);
   LOCAL_CHECK(mh_step > 0);
+  LOCAL_CHECK(enable_word_proposal >= 0 && enable_word_proposal <= 1);
+  LOCAL_CHECK(enable_doc_proposal >= 0 && enable_doc_proposal <= 1);
+  LOCAL_CHECK(enable_word_proposal + enable_doc_proposal != 0);
 
   input_corpus_filename = argv[1];
   if (argc >= 3) {
@@ -245,6 +268,8 @@ int main(int argc, char** argv) {
   } else if (sampler == "lightlda") {
     LightLDASampler* pp = new LightLDASampler();
     pp->mh_step() = mh_step;
+    pp->enable_word_proposal() = enable_word_proposal;
+    pp->enable_doc_proposal() = enable_doc_proposal;
     p = pp;
   }
 

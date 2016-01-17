@@ -28,17 +28,20 @@
 #define Debug(...) do {\
     fprintf(stderr, "[Debug]");\
     fprintf(stderr, __VA_ARGS__);\
+    fflush(stderr); \
   } while (0)
 #endif
 
 #define Log(...) do {\
     fprintf(stderr, "[Log]");\
     fprintf(stderr, __VA_ARGS__);\
+    fflush(stderr); \
   } while (0)
 
 #define Error(...) do {\
     fprintf(stderr, "[Error]");\
     fprintf(stderr, __VA_ARGS__);\
+    fflush(stderr); \
   } while (0)
 
 #define MISSING_ARG(argc, argv, i) \

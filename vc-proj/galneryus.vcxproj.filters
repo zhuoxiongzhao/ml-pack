@@ -54,6 +54,12 @@
     <ClInclude Include="..\src\lda\array.h">
       <Filter>lda</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\common\mt64.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lda\rand.h">
+      <Filter>lda</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\city.cc">
@@ -102,6 +108,12 @@
       <Filter>lda</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lda\alias.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\mt19937-64.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\rand.cc">
       <Filter>lda</Filter>
     </ClCompile>
   </ItemGroup>

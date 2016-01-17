@@ -2,8 +2,8 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
-#include "common/mt19937ar.h"
 #include "lda/alias.h"
+#include "lda/rand.h"
 
 void Alias::Construct(const std::vector<double>& prob) {
   double prob_sum = 0.0;
@@ -62,5 +62,5 @@ void Alias::Construct(const std::vector<double>& prob, double prob_sum) {
 }
 
 int Alias::Sample() const {
-  return Sample(genrand_real2(), genrand_real2());
+  return Sample(Rand::Double01(), Rand::Double01());
 }

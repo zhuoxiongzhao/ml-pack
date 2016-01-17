@@ -4,19 +4,9 @@
 
 #include <assert.h>
 #include "common/line-reader.h"
-#include "common/mt19937ar.h"
 #include "common/x.h"
+#include "lda/rand.h"
 #include "lda/sampler.h"
-
-namespace {
-class RandInializer {
- public:
-  RandInializer() {
-    init_genrand(0705);
-  }
-};
-static RandInializer rand_inializer;  // TODO(yafei)
-}
 
 /************************************************************************/
 /* PlainGibbsSampler */
@@ -225,7 +215,7 @@ int PlainGibbsSampler::Initialize() {
     IntTable& doc_m_topics_count = docs_topics_count_[m];
     for (int n = 0; n < doc.N; n++, word++) {
       const int v = word->v;
-      const int new_topic = (int)(genrand_int32() % K_);
+      const int new_topic = (int)Rand::UInt(K_);
       word->k = new_topic;
       ++topics_count_[new_topic];
       ++doc_m_topics_count[new_topic];
@@ -359,7 +349,7 @@ void PlainGibbsSampler::SampleDocument(int m) {
                           / (topics_count_[K_ - 1] + hp_sum_beta_)
                           * (doc_m_topics_count[K_ - 1] + hp_alpha_[K_ - 1]);
 
-    double r = genrand_real2() * topic_cdf_[K_ - 1];
+    double r = Rand::Double01() * topic_cdf_[K_ - 1];
     int new_k = -1;
     for (new_k = 0; new_k < K_; new_k++) {
       if (topic_cdf_[new_k] >= r) {
@@ -592,7 +582,7 @@ void SparseLDASampler::RemoveOrAddWordTopic(int m, int v, int k, int remove) {
 int SparseLDASampler::SampleDocumentWord(int m, int v) {
   // O(K)
   double sum = smooth_sum_ + doc_bucket_sum_ + word_bucket_sum_;
-  double sample = genrand_real2() * sum;
+  double sample = Rand::Double01() * sum;
   int new_k = -1;
 
   if (sample < word_bucket_sum_) {
@@ -721,14 +711,14 @@ void LightLDASampler::SampleDocument(int m) {
     for (int step = 0; step < mh_step_; step++) {
       new_k = SampleWithWord(v);
       if (new_k != current_k &&
-          genrand_real2() < WordAcceptRate(m, v, old_k, current_k, new_k)) {
+          Rand::Double01() < WordAcceptRate(m, v, old_k, current_k, new_k)) {
         word->k = new_k;
         current_k = new_k;
       }
 
       new_k = SampleWithDoc(doc, v);
       if (new_k != current_k &&
-          genrand_real2() < DocAcceptRate(m, v, old_k, current_k, new_k)) {
+          Rand::Double01() < DocAcceptRate(m, v, old_k, current_k, new_k)) {
         word->k = new_k;
         current_k = new_k;
       }
@@ -830,11 +820,11 @@ double LightLDASampler::WordAcceptRate(int m,
 int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
   // doc-proposal: N_mk + alpha_k
   double sum = hp_sum_alpha_ + doc.N;
-  double sample = genrand_real2() * sum;
+  double sample = Rand::Double01() * sum;
   if (sample < hp_sum_alpha_) {
     return hp_alpha_alias_table_.Sample(
              sample / hp_sum_alpha_,
-             genrand_real2());
+             Rand::Double01());
   } else {
     int offset = (int)(sample - hp_sum_alpha_);
     int index;

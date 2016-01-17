@@ -11,12 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\lda\lda-main.cc" />
+    <ClCompile Include="..\src\lda\lda-train.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8DA23EC7-4ABC-49E9-AA71-719083113FC8}</ProjectGuid>
+    <ProjectGuid>{DA4EDABA-601C-47C2-916D-4203D899F57F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>galneryus</RootNamespace>
+    <ProjectName>lda-train</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -159,11 +159,6 @@ void PlainGibbsSampler::SaveModel(const std::string& prefix) const {
 }
 
 int PlainGibbsSampler::Initialize() {
-  if (K_ == 0) {
-    Error("Please set K.\n");
-    return -1;
-  }
-
   if (hp_sum_alpha_ <= 0.0) {
     double avg_doc_len = (double)words_.size() / docs_.size();
     hp_alpha_.resize(K_, avg_doc_len / K_);
@@ -174,7 +169,7 @@ int PlainGibbsSampler::Initialize() {
   }
 
   if (hp_beta_ <= 0.0) {
-    hp_beta_ = 0.01;
+    hp_beta_ = 0.1;
   }
   hp_sum_beta_ = V_ * hp_beta_;
 
@@ -194,13 +189,7 @@ int PlainGibbsSampler::Initialize() {
   }
 
   if (total_iteration_ == 0) {
-    total_iteration_ = 50;
-  }
-  if (burnin_iteration_ == -1) {
-    burnin_iteration_ = 10;
-  }
-  if (log_likelyhood_interval_ == 0) {
-    log_likelyhood_interval_ = 10;
+    total_iteration_ = 200;
   }
   iteration_ = 1;
 
@@ -223,8 +212,8 @@ int PlainGibbsSampler::Initialize() {
     }
   }
 
-  const double llh = LogLikelyhood();
-  Log("LogLikelyhood(total/word)=%lg/%lg\n", llh, llh / words_.size());
+  const double llh = LogLikelihood();
+  Log("LogLikelihood(total/word)=%lg/%lg\n", llh, llh / words_.size());
   return 0;
 }
 
@@ -256,7 +245,7 @@ void PlainGibbsSampler::CollectPhi(Array2D<double>* phi) const {
   }
 }
 
-double PlainGibbsSampler::LogLikelyhood() const {
+double PlainGibbsSampler::LogLikelihood() const {
   double sum = 0.0;
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
@@ -303,9 +292,9 @@ void PlainGibbsSampler::PreSampleCorpus() {
 void PlainGibbsSampler::PostSampleCorpus() {
   HPOpt_Optimize();
   if (iteration_ > burnin_iteration_
-      && iteration_ % log_likelyhood_interval_ == 0) {
-    const double llh = LogLikelyhood();
-    Log("LogLikelyhood(total/word)=%lg/%lg\n", llh, llh / words_.size());
+      && iteration_ % log_likelihood_interval_ == 0) {
+    const double llh = LogLikelihood();
+    Log("LogLikelihood(total/word)=%lg/%lg\n", llh, llh / words_.size());
   }
 }
 
@@ -324,7 +313,6 @@ void PlainGibbsSampler::PostSampleDocument(int m) {
 }
 
 void PlainGibbsSampler::SampleDocument(int m) {
-  // O(K)
   const Doc& doc = docs_[m];
   Word* word = &words_[doc.index];
   IntTable& doc_m_topics_count = docs_topics_count_[m];
@@ -525,7 +513,7 @@ void SparseLDASampler::PostSampleDocument(int m) {
   const IntTable& doc_m_topics_count = docs_topics_count_[m];
   IntTable::const_iterator first = doc_m_topics_count.begin();
   IntTable::const_iterator last = doc_m_topics_count.end();
-  for (; first != last; ++first) {  // O(K_m)
+  for (; first != last; ++first) {
     const int k = first.id();
     cache_[k] = hp_alpha_[k] / (topics_count_[k] + hp_sum_beta_);
   }
@@ -534,7 +522,7 @@ void SparseLDASampler::PostSampleDocument(int m) {
 }
 
 void SparseLDASampler::SampleDocument(int m) {
-  PrepareDocBucket(m);  // O(K_m)
+  PrepareDocBucket(m);
 
   const Doc& doc = docs_[m];
   Word* word = &words_[doc.index];
@@ -543,7 +531,7 @@ void SparseLDASampler::SampleDocument(int m) {
     const int v = word->v;
     const int old_k = word->k;
     RemoveOrAddWordTopic(m, v, old_k, 1);
-    PrepareWordBucket(v);  // O(K)
+    PrepareWordBucket(v);
     const int new_k = SampleDocumentWord(m, v);
     RemoveOrAddWordTopic(m, v, new_k, 0);
     word->k = new_k;
@@ -580,13 +568,11 @@ void SparseLDASampler::RemoveOrAddWordTopic(int m, int v, int k, int remove) {
 }
 
 int SparseLDASampler::SampleDocumentWord(int m, int v) {
-  // O(K)
   double sum = smooth_sum_ + doc_bucket_sum_ + word_bucket_sum_;
   double sample = Rand::Double01() * sum;
   int new_k = -1;
 
   if (sample < word_bucket_sum_) {
-    // O(K_v)
     const IntTable& word_v_topics_count = words_topics_count_[v];
     IntTable::const_iterator first = word_v_topics_count.begin();
     IntTable::const_iterator last = word_v_topics_count.end();
@@ -599,7 +585,6 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
     }
     new_k = first.id();
   } else {
-    // O(K_m)
     sample -= word_bucket_sum_;
     if (sample < doc_bucket_sum_) {
       const IntTable& doc_m_topics_count = docs_topics_count_[m];
@@ -614,7 +599,6 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
       }
       new_k = first.id();
     } else {
-      // O(K)
       sample -= doc_bucket_sum_;
       int k;
       for (k = 0; k < K_; k++) {
@@ -631,7 +615,6 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
 }
 
 void SparseLDASampler::PrepareSmoothBucket() {
-  // O(K)
   smooth_sum_ = 0.0;
   for (int k = 0; k < K_; k++) {
     const double tmp = hp_alpha_[k] / (topics_count_[k] + hp_sum_beta_);
@@ -643,7 +626,6 @@ void SparseLDASampler::PrepareSmoothBucket() {
 }
 
 void SparseLDASampler::PrepareDocBucket(int m) {
-  // O(K_m)
   doc_bucket_sum_ = 0.0;
   doc_bucket_.assign(K_, 0);
   const IntTable& doc_m_topics_count = docs_topics_count_[m];
@@ -660,7 +642,6 @@ void SparseLDASampler::PrepareDocBucket(int m) {
 }
 
 void SparseLDASampler::PrepareWordBucket(int v) {
-  // O(K_v)
   word_bucket_sum_ = 0.0;
   word_bucket_.assign(K_, 0);
   const IntTable& word_v_topics_count = words_topics_count_[v];

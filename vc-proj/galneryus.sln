@@ -33,12 +33,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lr-main", "lr-main.vcxproj"
 		{06A0D531-E2F7-42BB-AF9D-102C82448A3A} = {06A0D531-E2F7-42BB-AF9D-102C82448A3A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-main", "lda-main.vcxproj", "{8DA23EC7-4ABC-49E9-AA71-719083113FC8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-test", "lda-test.vcxproj", "{B143DFF0-1BCB-4341-AC52-37879049508E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{06A0D531-E2F7-42BB-AF9D-102C82448A3A} = {06A0D531-E2F7-42BB-AF9D-102C82448A3A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-test", "lda-test.vcxproj", "{B143DFF0-1BCB-4341-AC52-37879049508E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-train", "lda-train.vcxproj", "{DA4EDABA-601C-47C2-916D-4203D899F57F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{06A0D531-E2F7-42BB-AF9D-102C82448A3A} = {06A0D531-E2F7-42BB-AF9D-102C82448A3A}
 	EndProjectSection
@@ -77,14 +77,14 @@ Global
 		{08A982A1-9C1D-4580-B16D-F70C8841436F}.Debug|Win32.Build.0 = Debug|Win32
 		{08A982A1-9C1D-4580-B16D-F70C8841436F}.Release|Win32.ActiveCfg = Release|Win32
 		{08A982A1-9C1D-4580-B16D-F70C8841436F}.Release|Win32.Build.0 = Release|Win32
-		{8DA23EC7-4ABC-49E9-AA71-719083113FC8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8DA23EC7-4ABC-49E9-AA71-719083113FC8}.Debug|Win32.Build.0 = Debug|Win32
-		{8DA23EC7-4ABC-49E9-AA71-719083113FC8}.Release|Win32.ActiveCfg = Release|Win32
-		{8DA23EC7-4ABC-49E9-AA71-719083113FC8}.Release|Win32.Build.0 = Release|Win32
 		{B143DFF0-1BCB-4341-AC52-37879049508E}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B143DFF0-1BCB-4341-AC52-37879049508E}.Debug|Win32.Build.0 = Debug|Win32
 		{B143DFF0-1BCB-4341-AC52-37879049508E}.Release|Win32.ActiveCfg = Release|Win32
 		{B143DFF0-1BCB-4341-AC52-37879049508E}.Release|Win32.Build.0 = Release|Win32
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Debug|Win32.Build.0 = Debug|Win32
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Release|Win32.ActiveCfg = Release|Win32
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

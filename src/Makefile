@@ -43,6 +43,7 @@ LIB=libx.a
 
 BIN= \
 lda-test$(EXE) \
+lda-train$(EXE) \
 lr-main$(EXE) \
 lr-test$(EXE) \
 gen-feature-map$(EXE) \
@@ -85,6 +86,9 @@ common/mt19937ar.o: common/mt19937ar.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 lda-test$(EXE): lda/lda-test.cc $(LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+
+lda-train$(EXE): lda/lda-train.cc $(LIB)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 lr-main$(EXE): lr/lr-main.cc $(LIB)

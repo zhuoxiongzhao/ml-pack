@@ -59,7 +59,7 @@ void TestYahoo() {
   model.alpha() = 0.1;
   model.beta() = 0.1;
   model.burnin_iteration() = 0;
-  model.log_likelyhood_interval() = 1;
+  model.log_likelihood_interval() = 1;
   model.total_iteration() = 100;
   model.hp_opt() = 0;
   model.storage_type() = kSparseHist;
@@ -76,7 +76,7 @@ void TestNIPS() {
   model.alpha() = 0.1;
   model.beta() = 0.1;
   model.burnin_iteration() = 0;
-  model.log_likelyhood_interval() = 1;
+  model.log_likelihood_interval() = 1;
   model.total_iteration() = 200;
   model.hp_opt() = 0;
   model.storage_type() = kSparseHist;

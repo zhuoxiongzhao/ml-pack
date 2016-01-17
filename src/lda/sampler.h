@@ -23,6 +23,9 @@ struct Word {
   int k;  // topic id assign to this word, starts from 0
 };
 
+/************************************************************************/
+/* PlainGibbsSampler */
+/************************************************************************/
 class PlainGibbsSampler {
  protected:
   // corpus
@@ -72,7 +75,7 @@ class PlainGibbsSampler {
   // iteration variables
   int total_iteration_;
   int burnin_iteration_;
-  int log_likelyhood_interval_;
+  int log_likelihood_interval_;
   int iteration_;
   // a value of enum TableType
   int storage_type_;
@@ -91,8 +94,8 @@ class PlainGibbsSampler {
     hp_opt_alpha_iteration_(0),
     hp_opt_beta_iteration_(0),
     total_iteration_(0),
-    burnin_iteration_(-1),
-    log_likelyhood_interval_(0),
+    burnin_iteration_(0),
+    log_likelihood_interval_(0),
     storage_type_(kSparseHist) {}
   virtual ~PlainGibbsSampler();
 
@@ -141,8 +144,8 @@ class PlainGibbsSampler {
     return burnin_iteration_;
   }
 
-  int& log_likelyhood_interval() {
-    return log_likelyhood_interval_;
+  int& log_likelihood_interval() {
+    return log_likelihood_interval_;
   }
 
   int& storage_type() {
@@ -156,7 +159,7 @@ class PlainGibbsSampler {
   virtual int InitializeSampler();
   virtual void CollectTheta(Array2D<double>* theta) const;
   virtual void CollectPhi(Array2D<double>* phi) const;
-  virtual double LogLikelyhood() const;
+  virtual double LogLikelihood() const;
   virtual int Train();
   virtual void PreSampleCorpus();
   virtual void PostSampleCorpus();
@@ -180,6 +183,9 @@ class PlainGibbsSampler {
   }
 };
 
+/************************************************************************/
+/* SparseLDASampler */
+/************************************************************************/
 class SparseLDASampler : public PlainGibbsSampler {
  private:
   double smooth_sum_;
@@ -204,6 +210,9 @@ class SparseLDASampler : public PlainGibbsSampler {
   void PrepareWordBucket(int v);
 };
 
+/************************************************************************/
+/* LightLDASampler */
+/************************************************************************/
 class LightLDASampler : public PlainGibbsSampler {
  private:
   Alias hp_alpha_alias_table_;
@@ -215,9 +224,11 @@ class LightLDASampler : public PlainGibbsSampler {
  public:
   LightLDASampler() : mh_step_(0) {}
 
+  // setters
   int& mh_step() {
     return mh_step_;
   }
+  // end of setters
 
   virtual int InitializeSampler();
   virtual void PostSampleCorpus();

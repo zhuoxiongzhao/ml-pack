@@ -659,7 +659,7 @@ void SparseLDASampler::PrepareWordBucket(int v) {
 /* LightLDASampler */
 /************************************************************************/
 int LightLDASampler::InitializeSampler() {
-  hp_alpha_alias_table_.Construct(hp_alpha_, hp_sum_alpha_);
+  hp_alpha_alias_table_.Build(hp_alpha_, hp_sum_alpha_);
   cached_words_topic_samples_.resize(V_);
   if (mh_step_ == 0) {
     mh_step_ = 8;
@@ -672,7 +672,7 @@ void LightLDASampler::PostSampleCorpus() {
 
   if (HPOpt_Enabled()) {
     if (hp_opt_alpha_iteration_ > 0) {
-      hp_alpha_alias_table_.Construct(hp_alpha_, hp_sum_alpha_);
+      hp_alpha_alias_table_.Build(hp_alpha_, hp_sum_alpha_);
     }
   }
 }
@@ -831,7 +831,7 @@ int LightLDASampler::SampleWithWord(int v) {
       }
     }
 
-    word_alias_table_.Construct(word_topics_prob_);
+    word_alias_table_.Build(word_topics_prob_);
     int cached_samples = K_ * mh_step_;
     word_v_topic_samples_.reserve(cached_samples);
     for (int i = 0; i < cached_samples; i++) {

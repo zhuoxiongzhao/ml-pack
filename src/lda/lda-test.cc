@@ -24,7 +24,7 @@ void TestAlias() {
   prob.push_back(0.05);
 
   Alias alias;
-  alias.Construct(prob);
+  alias.Build(prob);
 
   std::vector<int> count(alias.n());
   const int N = 10000;

@@ -5,15 +5,15 @@
 #include "lda/alias.h"
 #include "lda/rand.h"
 
-void Alias::Construct(const std::vector<double>& prob) {
+void Alias::Build(const std::vector<double>& prob) {
   double prob_sum = 0.0;
   for (int i = 0, size = (int)prob.size(); i < size; i++) {
     prob_sum += prob[i];
   }
-  Construct(prob, prob_sum);
+  Build(prob, prob_sum);
 }
 
-void Alias::Construct(const std::vector<double>& prob, double prob_sum) {
+void Alias::Build(const std::vector<double>& prob, double prob_sum) {
   table_.resize(prob.size());
   n_ = (int)prob.size();
 
@@ -59,6 +59,10 @@ void Alias::Construct(const std::vector<double>& prob, double prob_sum) {
     const int l = small_[small_begin++];
     table_[l].prob = 1.0;
   }
+}
+
+int Alias::Sample(double u1) const {
+  return Sample(u1, Rand::Double01());
 }
 
 int Alias::Sample() const {

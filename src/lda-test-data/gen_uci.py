@@ -10,8 +10,8 @@ import sys
 
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
-        sys.argv.append('docword.nips.txt')
-        sys.argv.append('nips-train')
+        print >> sys.stderr, '%s [docword] [output]' % sys.argv[0]
+        sys.exit(1)
 
     infile = open(sys.argv[1], 'r')
     outfile = open(sys.argv[2], 'w')

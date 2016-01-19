@@ -3,7 +3,6 @@
 //
 
 #include "lda/alias.h"
-#include "lda/rand.h"
 
 void Alias::Build(const std::vector<double>& prob) {
   double prob_sum = 0.0;
@@ -14,13 +13,14 @@ void Alias::Build(const std::vector<double>& prob) {
 }
 
 void Alias::Build(const std::vector<double>& prob, double prob_sum) {
-  table_.resize(prob.size());
-  n_ = (int)prob.size();
-
-  // use cached buffers
-  normalized_prob_.resize(n_);
-  small_.resize(n_);
-  large_.resize(n_);
+  if (table_.size() != prob.size()) {
+    table_.resize(prob.size());
+    n_ = (int)prob.size();
+    // use cached buffers
+    normalized_prob_.resize(n_);
+    small_.resize(n_);
+    large_.resize(n_);
+  }
 
   for (int i = 0; i < n_; ++i) {
     normalized_prob_[i] = (prob[i] * n_) / prob_sum;
@@ -40,10 +40,10 @@ void Alias::Build(const std::vector<double>& prob, double prob_sum) {
   while (small_begin != small_end && large_begin != large_end) {
     const int l = small_[small_begin++];
     const int g = large_[large_begin++];
-    table_[l].prob = normalized_prob_[l];
-    table_[l].index = g;
-    normalized_prob_[g] = (normalized_prob_[g] + normalized_prob_[l]) - 1;
-    if (normalized_prob_[g] < 1.0) {
+    AliasItem& item = table_[l];
+    item.prob = normalized_prob_[l];
+    item.index = g;
+    if ((normalized_prob_[g] += (item.prob - 1)) < 1.0) {
       small_[small_end++] = g;
     } else {
       large_[large_end++] = g;
@@ -59,12 +59,4 @@ void Alias::Build(const std::vector<double>& prob, double prob_sum) {
     const int l = small_[small_begin++];
     table_[l].prob = 1.0;
   }
-}
-
-int Alias::Sample(double u1) const {
-  return Sample(u1, Rand::Double01());
-}
-
-int Alias::Sample() const {
-  return Sample(Rand::Double01(), Rand::Double01());
 }

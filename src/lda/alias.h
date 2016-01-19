@@ -9,6 +9,8 @@
 
 #include <vector>
 
+#include "lda/rand.h"
+
 class Alias {
  private:
   // cache friendly
@@ -34,12 +36,21 @@ class Alias {
   void Build(const std::vector<double>& prob);
   void Build(const std::vector<double>& prob, double prob_sum);
 
-  int Sample() const;
+  int Sample() const {
+    return Sample(Rand::Double01());
+  }
+
   // u1 is in [0, 1)
-  int Sample(double u1) const;
+  int Sample(double u1) const {
+    const double un = u1 * n_;  // un is in [0, n)
+    const int i = (int)un;
+    const double u2 = un - i;  // u2 is again in [0, 1)
+    return (u2 < table_[i].prob) ? i : table_[i].index;
+  }
+
   // u1, u2 are in [0, 1)
   int Sample(double u1, double u2) const {
-    int i = (int)(u1 * n_);
+    const int i = (int)(u1 * n_);
     return (u2 < table_[i].prob) ? i : table_[i].index;
   }
 };

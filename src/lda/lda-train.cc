@@ -48,7 +48,7 @@ void Usage() {
           "      The first column of INPUT_FILE is doc ID.\n"
           "      Default is \"%d\".\n"
           "    -sampler SAMPLER\n"
-          "      SAMPLER can be lda, sparselda, lightlda.\n"
+          "      SAMPLER can be lda, sparselda, aliaslda, lightlda.\n"
           "      Default is \"%s\".\n"
           "    -K TOPIC\n"
           "      Number of topics.\n"
@@ -93,7 +93,7 @@ void Usage() {
           "      Storage type. 1, dense; 2, array; 3, sparse.\n"
           "      Default is \"%d\".\n"
           "    -mh_step MH_STEP\n"
-          "      Number of MH steps(lightlda).\n"
+          "      Number of MH steps(aliaslda or lightlda).\n"
           "      Default is \"%d\".\n"
           "    -enable_word_proposal 0/1\n"
           "      Enable word proposal(lightlda).\n"
@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
     Usage();
   }
 
-#define LOCAL_CHECK(condition) \
+#define CHECK_EXIT(condition) \
   do { \
     if (!(condition)) { \
       fprintf(stderr, "Must have: %s\n", #condition); \
@@ -230,28 +230,29 @@ int main(int argc, char** argv) {
     } \
   } while (0)
 
-  LOCAL_CHECK(doc_with_id >= 0 && doc_with_id <= 1);
-  LOCAL_CHECK(sampler == "lda"
-              || sampler == "sparselda"
-              || sampler == "lightlda");
-  LOCAL_CHECK(K >= 2);
-  LOCAL_CHECK(alpha >= 0.0);
-  LOCAL_CHECK(beta > 0.0);
-  LOCAL_CHECK(hp_opt >= 0 && hp_opt <= 1);
-  LOCAL_CHECK(hp_opt_interval > 0);
-  LOCAL_CHECK(hp_opt_alpha_shape >= 0.0);
-  LOCAL_CHECK(hp_opt_alpha_scale > 0.0);
-  LOCAL_CHECK(hp_opt_alpha_iteration >= 0);
-  LOCAL_CHECK(hp_opt_beta_iteration >= 0);
-  LOCAL_CHECK(total_iteration > 0);
-  LOCAL_CHECK(burnin_iteration >= 0);
-  LOCAL_CHECK(total_iteration > burnin_iteration);
-  LOCAL_CHECK(log_likelihood_interval >= 0);
-  LOCAL_CHECK(storage_type >= 1 && storage_type <= 3);
-  LOCAL_CHECK(mh_step > 0);
-  LOCAL_CHECK(enable_word_proposal >= 0 && enable_word_proposal <= 1);
-  LOCAL_CHECK(enable_doc_proposal >= 0 && enable_doc_proposal <= 1);
-  LOCAL_CHECK(enable_word_proposal + enable_doc_proposal != 0);
+  CHECK_EXIT(doc_with_id >= 0 && doc_with_id <= 1);
+  CHECK_EXIT(sampler == "lda"
+             || sampler == "sparselda"
+             || sampler == "aliaslda"
+             || sampler == "lightlda");
+  CHECK_EXIT(K >= 2);
+  CHECK_EXIT(alpha >= 0.0);
+  CHECK_EXIT(beta > 0.0);
+  CHECK_EXIT(hp_opt >= 0 && hp_opt <= 1);
+  CHECK_EXIT(hp_opt_interval > 0);
+  CHECK_EXIT(hp_opt_alpha_shape >= 0.0);
+  CHECK_EXIT(hp_opt_alpha_scale > 0.0);
+  CHECK_EXIT(hp_opt_alpha_iteration >= 0);
+  CHECK_EXIT(hp_opt_beta_iteration >= 0);
+  CHECK_EXIT(total_iteration > 0);
+  CHECK_EXIT(burnin_iteration >= 0);
+  CHECK_EXIT(total_iteration > burnin_iteration);
+  CHECK_EXIT(log_likelihood_interval >= 0);
+  CHECK_EXIT(storage_type >= 1 && storage_type <= 3);
+  CHECK_EXIT(mh_step > 0);
+  CHECK_EXIT(enable_word_proposal >= 0 && enable_word_proposal <= 1);
+  CHECK_EXIT(enable_doc_proposal >= 0 && enable_doc_proposal <= 1);
+  CHECK_EXIT(enable_word_proposal + enable_doc_proposal != 0);
 
   input_corpus_filename = argv[1];
   if (argc >= 3) {
@@ -265,6 +266,10 @@ int main(int argc, char** argv) {
     p = new GibbsSampler();
   } else if (sampler == "sparselda") {
     p = new SparseLDASampler();
+  } else if (sampler == "aliaslda") {
+    AliasLDASampler* pp = new AliasLDASampler();
+    pp->mh_step() = mh_step;
+    p = pp;
   } else if (sampler == "lightlda") {
     LightLDASampler* pp = new LightLDASampler();
     pp->mh_step() = mh_step;

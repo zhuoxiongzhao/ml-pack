@@ -16,7 +16,7 @@ int LightLDASampler::InitializeSampler() {
 }
 
 void LightLDASampler::PostSampleCorpus() {
-  GibbsSampler::PostSampleCorpus();
+  SamplerBase::PostSampleCorpus();
 
   if (HPOpt_Enabled()) {
     if (hp_opt_alpha_iteration_ > 0) {
@@ -30,27 +30,18 @@ void LightLDASampler::SampleDocument(int m) {
   Word* word = &words_[doc.index];
   IntTable& doc_m_topics_count = docs_topics_count_[m];
 
+  int s, t;
+  int N_ms, N_ms_prime, N_mt, N_mt_prime;
+  int N_vs, N_vs_prime, N_vt, N_vt_prime;
+  int N_s, N_s_prime, N_t, N_t_prime;
+  double hp_alpha_s, hp_alpha_t;
+  double accept_rate;
+
   for (int n = 0; n < doc.N; n++, word++) {
     const int v = word->v;
     IntTable& word_v_topics_count = words_topics_count_[v];
     const int old_k = word->k;
-    int s = word->k;
-    int t;
-    int N_ms;
-    int N_ms_prime;
-    int N_mt;
-    int N_mt_prime;
-    int N_vs;
-    int N_vs_prime;
-    int N_vt;
-    int N_vt_prime;
-    int N_s;
-    int N_s_prime;
-    int N_t;
-    int N_t_prime;
-    double hp_alpha_s;
-    double hp_alpha_t;
-    double accept_rate;
+    s = old_k;
 
     N_ms = doc_m_topics_count[s];
     N_vs = word_v_topics_count[s];

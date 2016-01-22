@@ -223,7 +223,7 @@ class SparseLDASampler : public SamplerBase {
 /************************************************************************/
 /* AliasLDASampler */
 /************************************************************************/
-class AliasLDASampler : public GibbsSampler {
+class AliasLDASampler : public SamplerBase {
  private:
   std::vector<double> p_pdf_;
   std::vector<double> q_sums_;  // for each word v
@@ -249,7 +249,7 @@ class AliasLDASampler : public GibbsSampler {
 /************************************************************************/
 /* LightLDASampler */
 /************************************************************************/
-class LightLDASampler : public GibbsSampler {
+class LightLDASampler : public SamplerBase {
  private:
   Alias hp_alpha_alias_table_;
   Alias word_alias_table_;

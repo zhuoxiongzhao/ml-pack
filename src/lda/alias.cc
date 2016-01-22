@@ -4,14 +4,6 @@
 
 #include "lda/alias.h"
 
-void Alias::Build(const std::vector<double>& prob) {
-  double prob_sum = 0.0;
-  for (int i = 0, size = (int)prob.size(); i < size; i++) {
-    prob_sum += prob[i];
-  }
-  Build(prob, prob_sum);
-}
-
 void Alias::Build(const std::vector<double>& prob, double prob_sum) {
   if (table_.size() != prob.size()) {
     table_.resize(prob.size());

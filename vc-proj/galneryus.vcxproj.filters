@@ -116,5 +116,17 @@
     <ClCompile Include="..\src\lda\rand.cc">
       <Filter>lda</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lda\alias_lda_sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\light_lda_sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\sparse_lda_sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lda\gibbs_sampler.cc">
+      <Filter>lda</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

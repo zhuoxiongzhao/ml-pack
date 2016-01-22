@@ -2,18 +2,14 @@
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 
-#include <assert.h>
 #include "common/line-reader.h"
 #include "common/x.h"
 #include "lda/rand.h"
 #include "lda/sampler.h"
 
-/************************************************************************/
-/* PlainGibbsSampler */
-/************************************************************************/
-PlainGibbsSampler::~PlainGibbsSampler() {}
+SamplerBase::~SamplerBase() {}
 
-void PlainGibbsSampler::LoadCorpus(FILE* fp, int with_id) {
+void SamplerBase::LoadCorpus(FILE* fp, int with_id) {
   LineReader line_reader;
   int line_no = 0;
   char* endptr;
@@ -100,7 +96,7 @@ void PlainGibbsSampler::LoadCorpus(FILE* fp, int with_id) {
   Log("Loaded %d documents with a %d-size vocabulary.\n", M_, V_);
 }
 
-void PlainGibbsSampler::SaveModel(const std::string& prefix) const {
+void SamplerBase::SaveModel(const std::string& prefix) const {
   std::string filename;
   Log("Saving model.\n");
   {
@@ -158,7 +154,7 @@ void PlainGibbsSampler::SaveModel(const std::string& prefix) const {
   Log("Done.\n");
 }
 
-int PlainGibbsSampler::Initialize() {
+int SamplerBase::Initialize() {
   if (hp_sum_alpha_ <= 0.0) {
     double avg_doc_len = (double)words_.size() / docs_.size();
     hp_alpha_.resize(K_, avg_doc_len / K_);
@@ -217,12 +213,11 @@ int PlainGibbsSampler::Initialize() {
   return 0;
 }
 
-int PlainGibbsSampler::InitializeSampler() {
-  topic_cdf_.resize(K_);
+int SamplerBase::InitializeSampler() {
   return 0;
 }
 
-void PlainGibbsSampler::CollectTheta(Array2D<double>* theta) const {
+void SamplerBase::CollectTheta(Array2D<double>* theta) const {
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
     const IntTable& doc_m_topics_count = docs_topics_count_[m];
@@ -234,7 +229,7 @@ void PlainGibbsSampler::CollectTheta(Array2D<double>* theta) const {
   }
 }
 
-void PlainGibbsSampler::CollectPhi(Array2D<double>* phi) const {
+void SamplerBase::CollectPhi(Array2D<double>* phi) const {
   for (int k = 0; k < K_; k++) {
     const int topics_count_k = topics_count_[k];
     double* phi_k = (*phi)[k];
@@ -245,7 +240,7 @@ void PlainGibbsSampler::CollectPhi(Array2D<double>* phi) const {
   }
 }
 
-double PlainGibbsSampler::LogLikelihood() const {
+double SamplerBase::LogLikelihood() const {
   double sum = 0.0;
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
@@ -267,7 +262,7 @@ double PlainGibbsSampler::LogLikelihood() const {
   return sum;
 }
 
-int PlainGibbsSampler::Train() {
+int SamplerBase::Train() {
   if (Initialize() != 0) {
     return -1;
   }
@@ -284,12 +279,12 @@ int PlainGibbsSampler::Train() {
   return 0;
 }
 
-void PlainGibbsSampler::PreSampleCorpus() {
+void SamplerBase::PreSampleCorpus() {
   Log("Iteration %d started.\n", iteration_);
   HPOpt_Initialize();
 }
 
-void PlainGibbsSampler::PostSampleCorpus() {
+void SamplerBase::PostSampleCorpus() {
   HPOpt_Optimize();
   if (iteration_ > burnin_iteration_
       && iteration_ % log_likelihood_interval_ == 0) {
@@ -298,7 +293,7 @@ void PlainGibbsSampler::PostSampleCorpus() {
   }
 }
 
-void PlainGibbsSampler::SampleCorpus() {
+void SamplerBase::SampleCorpus() {
   for (int m = 0; m < M_; m++) {
     PreSampleDocument(m);
     SampleDocument(m);
@@ -306,54 +301,13 @@ void PlainGibbsSampler::SampleCorpus() {
   }
 }
 
-void PlainGibbsSampler::PreSampleDocument(int m) {}
+void SamplerBase::PreSampleDocument(int m) {}
 
-void PlainGibbsSampler::PostSampleDocument(int m) {
+void SamplerBase::PostSampleDocument(int m) {
   HPOpt_PostSampleDocument(m);
 }
 
-void PlainGibbsSampler::SampleDocument(int m) {
-  const Doc& doc = docs_[m];
-  Word* word = &words_[doc.index];
-  IntTable& doc_m_topics_count = docs_topics_count_[m];
-
-  for (int n = 0; n < doc.N; n++, word++) {
-    const int v = word->v;
-    const int old_k = word->k;
-    IntTable& word_v_topics_count = words_topics_count_[v];
-
-    --topics_count_[old_k];
-    --doc_m_topics_count[old_k];
-    --word_v_topics_count[old_k];
-
-    topic_cdf_[0] = 0.0;
-    for (int k = 0; k < K_ - 1; k++) {
-      topic_cdf_[k] += (word_v_topics_count[k] + hp_beta_)
-                       / (topics_count_[k] + hp_sum_beta_)
-                       * (doc_m_topics_count[k] + hp_alpha_[k]);
-      topic_cdf_[k + 1] = topic_cdf_[k];
-    }
-    topic_cdf_[K_ - 1] += (word_v_topics_count[K_ - 1] + hp_beta_)
-                          / (topics_count_[K_ - 1] + hp_sum_beta_)
-                          * (doc_m_topics_count[K_ - 1] + hp_alpha_[K_ - 1]);
-
-    double r = Rand::Double01() * topic_cdf_[K_ - 1];
-    int new_k = -1;
-    for (new_k = 0; new_k < K_; new_k++) {
-      if (topic_cdf_[new_k] >= r) {
-        break;
-      }
-    }
-    assert(new_k != -1);
-
-    ++topics_count_[new_k];
-    ++doc_m_topics_count[new_k];
-    ++word_v_topics_count[new_k];
-    word->k = new_k;
-  }
-}
-
-void PlainGibbsSampler::HPOpt_Initialize() {
+void SamplerBase::HPOpt_Initialize() {
   if (!HPOpt_Enabled()) {
     return;
   }
@@ -366,7 +320,7 @@ void PlainGibbsSampler::HPOpt_Initialize() {
   topic_len_hist_.clear();
 }
 
-void PlainGibbsSampler::HPOpt_Optimize() {
+void SamplerBase::HPOpt_Optimize() {
   if (!HPOpt_Enabled()) {
     return;
   }
@@ -382,7 +336,7 @@ void PlainGibbsSampler::HPOpt_Optimize() {
   }
 }
 
-void PlainGibbsSampler::HPOpt_OptimizeAlpha() {
+void SamplerBase::HPOpt_OptimizeAlpha() {
   for (int i = 0; i < hp_opt_alpha_iteration_; i++) {
     double denom = 0.0;
     double diff_digamma = 0.0;
@@ -412,7 +366,7 @@ void PlainGibbsSampler::HPOpt_OptimizeAlpha() {
   }
 }
 
-void PlainGibbsSampler::HPOpt_PrepareOptimizeBeta() {
+void SamplerBase::HPOpt_PrepareOptimizeBeta() {
   for (int m = 0; m < M_; m++) {
     const IntTable& doc_m_topics_count = docs_topics_count_[m];
     for (int k = 0; k < K_; k++) {
@@ -439,7 +393,7 @@ void PlainGibbsSampler::HPOpt_PrepareOptimizeBeta() {
   }
 }
 
-void PlainGibbsSampler::HPOpt_OptimizeBeta() {
+void SamplerBase::HPOpt_OptimizeBeta() {
   for (int i = 0; i < hp_opt_beta_iteration_; i++) {
     double num = 0.0;
     double diff_digamma = 0.0;
@@ -460,7 +414,7 @@ void PlainGibbsSampler::HPOpt_OptimizeBeta() {
   }
 }
 
-void PlainGibbsSampler::HPOpt_PostSampleDocument(int m) {
+void SamplerBase::HPOpt_PostSampleDocument(int m) {
   if (!HPOpt_Enabled()) {
     return;
   }
@@ -486,381 +440,5 @@ void PlainGibbsSampler::HPOpt_PostSampleDocument(int m) {
       }
       ++doc_len_hist_[doc.N];
     }
-  }
-}
-
-/************************************************************************/
-/* SparseLDASampler */
-/************************************************************************/
-int SparseLDASampler::InitializeSampler() {
-  smooth_bucket_.resize(K_);
-  doc_bucket_.resize(K_);
-  word_bucket_.resize(K_);
-  cache_.resize(K_);
-  PrepareSmoothBucket();
-  return 0;
-}
-
-void SparseLDASampler::PostSampleCorpus() {
-  PlainGibbsSampler::PostSampleCorpus();
-
-  if (HPOpt_Enabled()) {
-    PrepareSmoothBucket();
-  }
-}
-
-void SparseLDASampler::PostSampleDocument(int m) {
-  const IntTable& doc_m_topics_count = docs_topics_count_[m];
-  IntTable::const_iterator first = doc_m_topics_count.begin();
-  IntTable::const_iterator last = doc_m_topics_count.end();
-  for (; first != last; ++first) {
-    const int k = first.id();
-    cache_[k] = hp_alpha_[k] / (topics_count_[k] + hp_sum_beta_);
-  }
-
-  PlainGibbsSampler::HPOpt_PostSampleDocument(m);
-}
-
-void SparseLDASampler::SampleDocument(int m) {
-  PrepareDocBucket(m);
-
-  const Doc& doc = docs_[m];
-  Word* word = &words_[doc.index];
-
-  for (int n = 0; n < doc.N; n++, word++) {
-    const int v = word->v;
-    const int old_k = word->k;
-    RemoveOrAddWordTopic(m, v, old_k, 1);
-    PrepareWordBucket(v);
-    const int new_k = SampleDocumentWord(m, v);
-    RemoveOrAddWordTopic(m, v, new_k, 0);
-    word->k = new_k;
-  }
-}
-
-void SparseLDASampler::RemoveOrAddWordTopic(int m, int v, int k, int remove) {
-  IntTable& doc_m_topics_count = docs_topics_count_[m];
-  IntTable& word_v_topics_count = words_topics_count_[v];
-  double& smooth_bucket_k = smooth_bucket_[k];
-  double& doc_bucket_k = doc_bucket_[k];
-  double hp_alpha_k = hp_alpha_[k];
-  int doc_topic_count;
-  int topic_count;
-
-  smooth_sum_ -= smooth_bucket_k;
-  doc_bucket_sum_ -= doc_bucket_k;
-
-  if (remove) {
-    doc_topic_count = --doc_m_topics_count[k];
-    --word_v_topics_count[k];
-    topic_count = --topics_count_[k];
-  } else {
-    doc_topic_count = ++doc_m_topics_count[k];
-    ++word_v_topics_count[k];
-    topic_count = ++topics_count_[k];
-  }
-
-  smooth_bucket_k = hp_alpha_k * hp_beta_ / (topic_count + hp_sum_beta_);
-  doc_bucket_k = doc_topic_count * hp_beta_ / (topic_count + hp_sum_beta_);
-  smooth_sum_ += smooth_bucket_k;
-  doc_bucket_sum_ += doc_bucket_k;
-  cache_[k] = (doc_topic_count + hp_alpha_k) / (topic_count + hp_sum_beta_);
-}
-
-int SparseLDASampler::SampleDocumentWord(int m, int v) {
-  double sum = smooth_sum_ + doc_bucket_sum_ + word_bucket_sum_;
-  double sample = Rand::Double01() * sum;
-  int new_k = -1;
-
-  if (sample < word_bucket_sum_) {
-    const IntTable& word_v_topics_count = words_topics_count_[v];
-    IntTable::const_iterator first = word_v_topics_count.begin();
-    IntTable::const_iterator last = word_v_topics_count.end();
-    for (; first != last; ++first) {
-      const int k = first.id();
-      sample -= word_bucket_[k];
-      if (sample <= 0.0) {
-        break;
-      }
-    }
-    new_k = first.id();
-  } else {
-    sample -= word_bucket_sum_;
-    if (sample < doc_bucket_sum_) {
-      const IntTable& doc_m_topics_count = docs_topics_count_[m];
-      IntTable::const_iterator first = doc_m_topics_count.begin();
-      IntTable::const_iterator last = doc_m_topics_count.end();
-      for (; first != last; ++first) {
-        const int k = first.id();
-        sample -= doc_bucket_[k];
-        if (sample <= 0.0) {
-          break;
-        }
-      }
-      new_k = first.id();
-    } else {
-      sample -= doc_bucket_sum_;
-      int k;
-      for (k = 0; k < K_; k++) {
-        sample -= smooth_bucket_[k];
-        if (sample <= 0.0) {
-          break;
-        }
-      }
-      new_k = k;
-    }
-  }
-
-  return new_k;
-}
-
-void SparseLDASampler::PrepareSmoothBucket() {
-  smooth_sum_ = 0.0;
-  for (int k = 0; k < K_; k++) {
-    const double tmp = hp_alpha_[k] / (topics_count_[k] + hp_sum_beta_);
-    const double pdf = tmp * hp_beta_;
-    smooth_bucket_[k] = pdf;
-    smooth_sum_ += pdf;
-    cache_[k] = tmp;
-  }
-}
-
-void SparseLDASampler::PrepareDocBucket(int m) {
-  doc_bucket_sum_ = 0.0;
-  doc_bucket_.assign(K_, 0);
-  const IntTable& doc_m_topics_count = docs_topics_count_[m];
-  IntTable::const_iterator first = doc_m_topics_count.begin();
-  IntTable::const_iterator last = doc_m_topics_count.end();
-  for (; first != last; ++first) {
-    const int k = first.id();
-    const double tmp = topics_count_[k] + hp_sum_beta_;
-    const double pdf = first.count() * hp_beta_ / tmp;
-    doc_bucket_[k] = pdf;
-    doc_bucket_sum_ += pdf;
-    cache_[k] = (first.count() + hp_alpha_[k]) / tmp;
-  }
-}
-
-void SparseLDASampler::PrepareWordBucket(int v) {
-  word_bucket_sum_ = 0.0;
-  word_bucket_.assign(K_, 0);
-  const IntTable& word_v_topics_count = words_topics_count_[v];
-  IntTable::const_iterator first = word_v_topics_count.begin();
-  IntTable::const_iterator last = word_v_topics_count.end();
-  for (; first != last; ++first) {
-    const int k = first.id();
-    const double pdf = first.count() * cache_[k];
-    word_bucket_[k] = pdf;
-    word_bucket_sum_ += pdf;
-  }
-}
-
-/************************************************************************/
-/* LightLDASampler */
-/************************************************************************/
-int LightLDASampler::InitializeSampler() {
-  hp_alpha_alias_table_.Build(hp_alpha_, hp_sum_alpha_);
-  cached_words_topic_samples_.resize(V_);
-  if (mh_step_ == 0) {
-    mh_step_ = 8;
-  }
-  return 0;
-}
-
-void LightLDASampler::PostSampleCorpus() {
-  PlainGibbsSampler::PostSampleCorpus();
-
-  if (HPOpt_Enabled()) {
-    if (hp_opt_alpha_iteration_ > 0) {
-      hp_alpha_alias_table_.Build(hp_alpha_, hp_sum_alpha_);
-    }
-  }
-}
-
-void LightLDASampler::SampleDocument(int m) {
-  const Doc& doc = docs_[m];
-  Word* word = &words_[doc.index];
-  IntTable& doc_m_topics_count = docs_topics_count_[m];
-
-  for (int n = 0; n < doc.N; n++, word++) {
-    const int v = word->v;
-    IntTable& word_v_topics_count = words_topics_count_[v];
-    const int old_k = word->k;
-    int s = word->k;
-    int t;
-    int N_ms;
-    int N_mt;
-    int N_vs;
-    int N_vt;
-    int N_s;
-    int N_t;
-    double hp_alpha_s;
-    double hp_alpha_t;
-    double accept_rate;
-
-    for (int step = 0; step < mh_step_; step++) {
-      if (enable_word_proposal_) {
-        // sample new topic from word proposal
-        t = SampleWithWord(v);
-
-        if (s != t) {
-          // calculate accept rate from topic s to topic t:
-          // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)
-          // -----------------------------------------------
-          // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)
-          // *
-          // (N^{-mn}_s + \sum\beta)
-          // -----------------------
-          // (N^{-mn}_t + \sum\beta)
-          // *
-          // (N_{vs} + \beta)(N_t + \sum\beta)
-          // ---------------------------------
-          // (N_{vt} + \beta)(N_s + \sum\beta)
-          N_ms = doc_m_topics_count[s];
-          N_mt = doc_m_topics_count[t];
-          N_vs = word_v_topics_count[s];
-          N_vt = word_v_topics_count[t];
-          N_s = topics_count_[s];
-          N_t = topics_count_[t];
-          hp_alpha_s = hp_alpha_[s];
-          hp_alpha_t = hp_alpha_[t];
-          // part 4, 5
-          accept_rate = (N_vs + hp_beta_) / (N_vt + hp_beta_)
-                        * (N_t + hp_sum_beta_) / (N_s + hp_sum_beta_);
-          // NOTE that: s != t
-          if (old_k == s) {
-            N_ms--;
-            N_vs--;
-            N_s--;
-          } else if (old_k == t) {
-            N_mt--;
-            N_vt--;
-            N_t--;
-          }
-          // part 1, 2, 3
-          accept_rate *=
-            (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
-            * (N_vt + hp_beta_) / (N_vs + hp_beta_)
-            * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
-
-          if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
-            word->k = t;
-            s = t;
-          }
-        }
-      }
-
-      if (enable_doc_proposal_) {
-        t = SampleWithDoc(doc, v);
-        if (s != t) {
-          // calculate accept rate from topic s to topic t:
-          // (N^{-mn}_{mt} + \alpha_t)(N^{-mn}_{vt} + \beta)
-          // -----------------------------------------------
-          // (N^{-mn}_{ms} + \alpha_s)(N^{-mn}_{vs} + \beta)
-          // *
-          // (N^{-mn}_s + \sum\beta)
-          // -----------------------
-          // (N^{-mn}_t + \sum\beta)
-          // *
-          // (N_{ms} + \alpha_s)
-          // -------------------
-          // (N_{mt} + \alpha_t)
-          N_ms = doc_m_topics_count[s];
-          N_mt = doc_m_topics_count[t];
-          N_vs = word_v_topics_count[s];
-          N_vt = word_v_topics_count[t];
-          N_s = topics_count_[s];
-          N_t = topics_count_[t];
-          hp_alpha_s = hp_alpha_[s];
-          hp_alpha_t = hp_alpha_[t];
-          // part 4
-          accept_rate = (N_ms + hp_alpha_s) / (N_mt + hp_alpha_t);
-          // NOTE that: s != t
-          if (old_k == s) {
-            N_ms--;
-            N_vs--;
-            N_s--;
-          } else if (old_k == t) {
-            N_mt--;
-            N_vt--;
-            N_t--;
-          }
-          // part 1, 2, 3
-          accept_rate *=
-            (N_mt + hp_alpha_t) / (N_ms + hp_alpha_s)
-            * (N_vt + hp_beta_) / (N_vs + hp_beta_)
-            * (N_s + hp_sum_beta_) / (N_t + hp_sum_beta_);
-
-          if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
-            word->k = t;
-            s = t;
-          }
-        }
-      }
-    }
-
-    if (old_k != s) {
-      --topics_count_[old_k];
-      --doc_m_topics_count[old_k];
-      --word_v_topics_count[old_k];
-      ++topics_count_[s];
-      ++doc_m_topics_count[s];
-      ++word_v_topics_count[s];
-    }
-  }
-}
-
-int LightLDASampler::SampleWithWord(int v) {
-  // word-proposal: (N_vk + beta)/(N_k + sum_beta)
-  std::vector<int>& word_v_topic_samples_ = cached_words_topic_samples_[v];
-  if (word_v_topic_samples_.empty()) {
-    word_topics_prob_.assign(K_, 0.0);
-    const IntTable& word_v_topics_count = words_topics_count_[v];
-    IntTable::const_iterator first = word_v_topics_count.begin();
-    IntTable::const_iterator last = word_v_topics_count.end();
-    for (; first != last; ++first) {
-      const int k = first.id();
-      word_topics_prob_[k] =
-        (first.count() + hp_beta_) / (topics_count_[k] + hp_sum_beta_);
-    }
-
-    for (int k = 0; k < K_; k++) {
-      double& prob_k = word_topics_prob_[k];
-      if (prob_k == 0.0) {
-        prob_k = hp_beta_ / (topics_count_[k] + hp_sum_beta_);
-      }
-    }
-
-    word_alias_table_.Build(word_topics_prob_);
-    int cached_samples = K_ * mh_step_;
-    word_v_topic_samples_.reserve(cached_samples);
-    for (int i = 0; i < cached_samples; i++) {
-      word_v_topic_samples_.push_back(word_alias_table_.Sample());
-    }
-  }
-
-  const int new_k = word_v_topic_samples_.back();
-  word_v_topic_samples_.pop_back();
-  return new_k;
-}
-
-int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
-  // doc-proposal: N_mk + alpha_k
-  double sum = hp_sum_alpha_ + doc.N;
-  double sample = Rand::Double01() * sum;
-  if (sample < hp_sum_alpha_) {
-    return hp_alpha_alias_table_.Sample(
-             sample / hp_sum_alpha_,
-             Rand::Double01());
-  } else {
-    int offset = (int)(sample - hp_sum_alpha_);
-    int index;
-    if (offset != doc.N) {
-      index = doc.index + offset;
-    } else {
-      // rare numerical errors may lie in this branch
-      index = doc.index + offset - 1;
-    }
-    return words_[index].k;
   }
 }

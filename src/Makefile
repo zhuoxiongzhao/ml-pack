@@ -35,6 +35,10 @@ common/mt19937-64.o \
 lda/alias.o \
 lda/rand.o \
 lda/sampler.o \
+lda/alias_lda_sampler.o \
+lda/gibbs_sampler.o \
+lda/light_lda_sampler.o \
+lda/sparse_lda_sampler.o \
 lr/lr.o \
 lr/metric.o \
 lr/problem.o

@@ -24,7 +24,7 @@ void TestAlias() {
   prob.push_back(0.05);
 
   Alias alias;
-  alias.Build(prob);
+  alias.Build(prob, 1.0);
 
   std::vector<int> count(alias.n());
   const int N = 10000;
@@ -76,8 +76,8 @@ void TestNIPS() {
   model.alpha() = 0.1;
   model.beta() = 0.1;
   model.burnin_iteration() = 0;
-  model.log_likelihood_interval() = 1;
-  model.total_iteration() = 200;
+  model.log_likelihood_interval() = 666;
+  model.total_iteration() = 50;
   model.hp_opt() = 0;
   model.storage_type() = kSparseHist;
   model.Train();

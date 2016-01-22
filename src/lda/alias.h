@@ -33,7 +33,6 @@ class Alias {
 
  public:
   Alias() : n_(0) {}
-  void Build(const std::vector<double>& prob);
   void Build(const std::vector<double>& prob, double prob_sum);
 
   int Sample() const {

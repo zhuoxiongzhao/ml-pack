@@ -260,9 +260,9 @@ int main(int argc, char** argv) {
     output_prefix = input_corpus_filename;
   }
 
-  PlainGibbsSampler* p = NULL;
+  SamplerBase* p = NULL;
   if (sampler == "lda") {
-    p = new PlainGibbsSampler();
+    p = new GibbsSampler();
   } else if (sampler == "sparselda") {
     p = new SparseLDASampler();
   } else if (sampler == "lightlda") {

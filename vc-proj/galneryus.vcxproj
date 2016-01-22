@@ -42,8 +42,12 @@
     <ClCompile Include="..\src\common\mt19937-64.c" />
     <ClCompile Include="..\src\common\mt19937ar.c" />
     <ClCompile Include="..\src\lda\alias.cc" />
+    <ClCompile Include="..\src\lda\alias_lda_sampler.cc" />
+    <ClCompile Include="..\src\lda\gibbs_sampler.cc" />
+    <ClCompile Include="..\src\lda\light_lda_sampler.cc" />
     <ClCompile Include="..\src\lda\rand.cc" />
     <ClCompile Include="..\src\lda\sampler.cc" />
+    <ClCompile Include="..\src\lda\sparse_lda_sampler.cc" />
     <ClCompile Include="..\src\lr\lr.cc" />
     <ClCompile Include="..\src\lr\metric.cc" />
     <ClCompile Include="..\src\lr\problem.cc" />

@@ -12,7 +12,7 @@
 #include <vector>
 
 // A cache-friendly array,
-// in which bytes are coherent in memory.
+// in which data are coherent in memory.
 template <class T>
 class Array2D {
  private:

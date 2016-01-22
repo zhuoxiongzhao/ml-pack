@@ -24,9 +24,9 @@ struct Word {
 };
 
 /************************************************************************/
-/* PlainGibbsSampler */
+/* GibbsSampler */
 /************************************************************************/
-class PlainGibbsSampler {
+class SamplerBase {
  protected:
   // corpus
   std::vector<std::string> doc_ids_;
@@ -77,14 +77,10 @@ class PlainGibbsSampler {
   int burnin_iteration_;
   int log_likelihood_interval_;
   int iteration_;
-  // a value of enum TableType
-  int storage_type_;
-
-  // topic CDF only for PlainGibbsSampler
-  std::vector<double> topic_cdf_;
+  int storage_type_;  // a value of enum TableType
 
  public:
-  PlainGibbsSampler() : K_(0),
+  SamplerBase() : K_(0),
     hp_sum_alpha_(0.0),
     hp_beta_(0.0),
     hp_opt_(0),
@@ -97,7 +93,7 @@ class PlainGibbsSampler {
     burnin_iteration_(0),
     log_likelihood_interval_(0),
     storage_type_(kSparseHist) {}
-  virtual ~PlainGibbsSampler();
+  virtual ~SamplerBase();
 
   // setters
   int& K() {
@@ -166,7 +162,7 @@ class PlainGibbsSampler {
   virtual void SampleCorpus();
   virtual void PreSampleDocument(int m);
   virtual void PostSampleDocument(int m);
-  virtual void SampleDocument(int m);
+  virtual void SampleDocument(int m) = 0;
   virtual void HPOpt_Initialize();
   virtual void HPOpt_Optimize();
   virtual void HPOpt_OptimizeAlpha();
@@ -184,16 +180,30 @@ class PlainGibbsSampler {
 };
 
 /************************************************************************/
+/* GibbsSampler */
+/************************************************************************/
+class GibbsSampler : public SamplerBase {
+ protected:
+  std::vector<double> word_topic_cdf_;  // cached
+
+ public:
+  GibbsSampler() {}
+
+  virtual int InitializeSampler();
+  virtual void SampleDocument(int m);
+};
+
+/************************************************************************/
 /* SparseLDASampler */
 /************************************************************************/
-class SparseLDASampler : public PlainGibbsSampler {
+class SparseLDASampler : public SamplerBase {
  private:
   double smooth_sum_;
-  double doc_bucket_sum_;
-  double word_bucket_sum_;
-  std::vector<double> smooth_bucket_;
-  std::vector<double> doc_bucket_;
-  std::vector<double> word_bucket_;
+  double doc_sum_;
+  double word_sum_;
+  std::vector<double> smooth_pdf_;
+  std::vector<double> doc_pdf_;
+  std::vector<double> word_pdf_;
   std::vector<double> cache_;
 
  public:
@@ -211,14 +221,40 @@ class SparseLDASampler : public PlainGibbsSampler {
 };
 
 /************************************************************************/
+/* AliasLDASampler */
+/************************************************************************/
+class AliasLDASampler : public GibbsSampler {
+ private:
+  std::vector<double> p_pdf_;
+  std::vector<double> q_sums_;  // for each word v
+  std::vector<std::vector<int> > q_samples_;  // for each word v
+  std::vector<double> q_pdf_;
+  Alias q_alias_table_;
+
+  int mh_step_;
+
+ public:
+  AliasLDASampler() : mh_step_(0) {}
+
+  // setters
+  int& mh_step() {
+    return mh_step_;
+  }
+  // end of setters
+
+  virtual int InitializeSampler();
+  virtual void SampleDocument(int m);
+};
+
+/************************************************************************/
 /* LightLDASampler */
 /************************************************************************/
-class LightLDASampler : public PlainGibbsSampler {
+class LightLDASampler : public GibbsSampler {
  private:
   Alias hp_alpha_alias_table_;
   Alias word_alias_table_;
-  std::vector<double> word_topics_prob_;
-  std::vector<std::vector<int> > cached_words_topic_samples_;
+  std::vector<double> word_topics_pdf_;
+  std::vector<std::vector<int> > words_topic_samples_;
   int mh_step_;
   int enable_word_proposal_;
   int enable_doc_proposal_;

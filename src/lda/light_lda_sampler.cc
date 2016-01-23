@@ -29,11 +29,10 @@ void LightLDASampler::SampleDocument(int m) {
   const Doc& doc = docs_[m];
   Word* word = &words_[doc.index];
   IntTable& doc_m_topics_count = docs_topics_count_[m];
-
   int s, t;
-  int N_ms, N_ms_prime, N_mt, N_mt_prime;
-  int N_vs, N_vs_prime, N_vt, N_vt_prime;
-  int N_s, N_s_prime, N_t, N_t_prime;
+  int N_ms, N_vs, N_s, N_mt, N_vt, N_t;
+  int N_ms_prime, N_vs_prime, N_s_prime;
+  int N_mt_prime, N_vt_prime, N_t_prime;
   double hp_alpha_s, hp_alpha_t;
   double accept_rate;
 
@@ -43,12 +42,9 @@ void LightLDASampler::SampleDocument(int m) {
     const int old_k = word->k;
     s = old_k;
 
-    N_ms = doc_m_topics_count[s];
-    N_vs = word_v_topics_count[s];
-    N_s = topics_count_[s];
-    N_ms_prime = N_ms;
-    N_vs_prime = N_vs;
-    N_s_prime = N_s;
+    N_ms_prime = N_ms = doc_m_topics_count[s];
+    N_vs_prime = N_vs = word_v_topics_count[s];
+    N_s_prime = N_s = topics_count_[s];
     if (old_k == s) {
       N_ms_prime--;
       N_vs_prime--;
@@ -74,12 +70,9 @@ void LightLDASampler::SampleDocument(int m) {
           // (N_{vs} + \beta)(N_t + \sum\beta)
           // ---------------------------------
           // (N_{vt} + \beta)(N_s + \sum\beta)
-          N_mt = doc_m_topics_count[t];
-          N_vt = word_v_topics_count[t];
-          N_t = topics_count_[t];
-          N_mt_prime = N_mt;
-          N_vt_prime = N_vt;
-          N_t_prime = N_t;
+          N_mt_prime = N_mt = doc_m_topics_count[t];
+          N_vt_prime = N_vt = word_v_topics_count[t];
+          N_t_prime = N_t = topics_count_[t];
           if (old_k == t) {
             N_mt_prime--;
             N_vt_prime--;
@@ -123,12 +116,9 @@ void LightLDASampler::SampleDocument(int m) {
           // (N_{ms} + \alpha_s)
           // -------------------
           // (N_{mt} + \alpha_t)
-          N_mt = doc_m_topics_count[t];
-          N_vt = word_v_topics_count[t];
-          N_t = topics_count_[t];
-          N_mt_prime = N_mt;
-          N_vt_prime = N_vt;
-          N_t_prime = N_t;
+          N_mt_prime = N_mt = doc_m_topics_count[t];
+          N_vt_prime = N_vt = word_v_topics_count[t];
+          N_t_prime = N_t = topics_count_[t];
           if (old_k == t) {
             N_mt_prime--;
             N_vt_prime--;
@@ -158,12 +148,12 @@ void LightLDASampler::SampleDocument(int m) {
     }
 
     if (old_k != s) {
-      --topics_count_[old_k];
       --doc_m_topics_count[old_k];
       --word_v_topics_count[old_k];
-      ++topics_count_[s];
+      --topics_count_[old_k];
       ++doc_m_topics_count[s];
       ++word_v_topics_count[s];
+      ++topics_count_[s];
     }
   }
 }
@@ -216,8 +206,7 @@ int LightLDASampler::SampleWithWord(int v) {
 
 int LightLDASampler::SampleWithDoc(const Doc& doc, int v) {
   // doc-proposal: N_mk + alpha_k
-  const double sum = hp_sum_alpha_ + doc.N;
-  double sample = Rand::Double01() * sum;
+  double sample = Rand::Double01() * (hp_sum_alpha_ + doc.N);
   if (sample < hp_sum_alpha_) {
     return hp_alpha_alias_table_.Sample(sample / hp_sum_alpha_);
   } else {

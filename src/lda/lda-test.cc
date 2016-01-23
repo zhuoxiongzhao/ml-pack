@@ -54,8 +54,8 @@ void TestYahoo() {
   ScopedFile fp(TEST_DATA_DIR"/yahoo-train", ScopedFile::Read);
   // GibbsSampler model;  //-83246.6/-6.99258
   // SparseLDASampler model;  //-83226.5/-6.99089
-  AliasLDASampler model;  // -83623.5/-7.02424
-  // LightLDASampler model;  // -83292.9/-6.99647
+  // AliasLDASampler model;  // -83187.8/-6.98764
+  LightLDASampler model;  // -83292.9/-6.99647
   model.mh_step() = 16;
   model.LoadCorpus(fp, 0);
   model.K() = 3;
